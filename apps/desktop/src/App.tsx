@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Floor } from "./Floor";
+import { ExpandedCubicle } from "./ExpandedCubicle";
 import { SAMPLE_FLOOR } from "./sample";
+import type { CubicleData } from "./cubicle";
 
 type Theme = "light" | "dark";
 
@@ -12,6 +14,7 @@ type Theme = "light" | "dark";
 export function App(): ReactNode {
   const [theme, setTheme] = useState<Theme>("dark");
   const [grayscale, setGrayscale] = useState(false);
+  const [walkedInto, setWalkedInto] = useState<CubicleData | null>(null);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -19,7 +22,10 @@ export function App(): ReactNode {
 
   return (
     <div className={`app${grayscale ? " grayscale" : ""}`}>
-      <Floor cubicles={SAMPLE_FLOOR} />
+      <Floor cubicles={SAMPLE_FLOOR} onSelect={setWalkedInto} />
+      {walkedInto && (
+        <ExpandedCubicle cubicle={walkedInto} onClose={() => setWalkedInto(null)} />
+      )}
       <footer className="control-bar">
         <button
           className="btn"

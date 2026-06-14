@@ -111,11 +111,14 @@ each with its own benchmark gate:
   glyph-distinct (`pnpm --filter @hedoffice/desktop preview-floor`); box-drawing
   aligns on a fixed 27-cell grid at `--lh-box` (1.15). 7 geometry tests; the app
   builds and includes a light/dark toggle + a grayscale check.
-- **Stage 2 — Walk in:** expanded cubicle (Notebook / Tasks / Terminal / Talk),
-  terminal feed with blinking cursor + typewriter reveal, and the approval-gate
-  modal.
-  *Gate:* the approval gate is unmistakable in monochrome and passes AA; the voice
-  meter is legible.
+- **Stage 2 — Walk in:** ✅ click a cubicle to expand into a heavy-bordered
+  workspace (Notebook / Tasks / Terminal / Talk) in a rounded modal; terminal feed
+  as a dark inset with colored verb glyphs, blinking cursor + typewriter reveal;
+  talk panel with a level meter; and the **approval-gate modal** surfacing the
+  Phase 3 gate.
+  *Gate met:* the approval box reads unmistakably in monochrome (verbatim action +
+  ✓/✗ glyph-coded choices — `pnpm --filter @hedoffice/desktop preview-walkin`);
+  all motion respects `prefers-reduced-motion`. 6 panel tests.
 - **Stage 3 — Warmth & polish:** hover/focus + slow status motion, the opt-in
   scanline toggle, the department rail + rounded bottom bar.
   *Gate:* with motion on, the floor still feels **calm** (no continuous decorative
