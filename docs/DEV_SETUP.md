@@ -1,9 +1,12 @@
 # HedOffice — Dev Setup (planned)
 
-> **Nothing here is wired up yet.** This repo is at Phase 0 (bootstrap): docs +
-> an empty monorepo skeleton. This file records the *intended* toolchain so the
-> first code increment has a target. Commands below will not work until the
-> Phase 0 code lands.
+> **Phase 0 code has landed.** The `schema` and `event-store` packages build,
+> typecheck, and test. The commands below work. Later packages (`mcp-server`,
+> `audio`, `core`, `desktop`, `harness`) are still skeletons.
+>
+> Note: pnpm blocks native postinstall scripts by default. `better-sqlite3` and
+> `esbuild` are allowlisted via `onlyBuiltDependencies` in `pnpm-workspace.yaml`,
+> so `pnpm install` builds the native SQLite addon automatically.
 
 ## Intended toolchain
 
@@ -33,16 +36,18 @@ tools/
   harness/       mock multi-client + latency benchmark        (Phase 1–2)
 ```
 
-## Planned first commands (once Phase 0 code lands)
+## Commands
 
 ```sh
-pnpm install
-pnpm -r build
-pnpm -r test
+pnpm install          # installs deps + builds the better-sqlite3 native addon
+pnpm -r build         # tsc build, topological order
+pnpm -r typecheck     # tsc --noEmit
+pnpm -r test          # vitest
+pnpm check            # build + typecheck + test
 ```
 
 ## Next increment
 
-Phase 0 code: `packages/schema` (Zod) + `packages/event-store` (better-sqlite3
-append/replay, WAL) with tests, plus pnpm workspace wiring. See
-[ROADMAP.md](ROADMAP.md).
+Phase 1: `packages/mcp-server` (stateful Streamable HTTP, per-session `McpServer`
+factory) + `packages/core` (presence engine) + a multi-client harness under
+`tools/harness`. See [ROADMAP.md](ROADMAP.md).

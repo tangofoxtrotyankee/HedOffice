@@ -17,13 +17,14 @@ Monorepo (pnpm workspaces), TypeScript strict. **Zod schemas as the single
 source of truth** for both MCP tool inputs and the event schema. Define the
 typed event-log schema and the SQLite DDL.
 
-- [ ] pnpm workspace + TS strict config wired
-- [ ] `packages/schema` — Zod event + tool schemas (compiling)
-- [ ] `packages/event-store` — SQLite DDL + append-only log + projections (WAL mode)
-- [ ] Append/replay tested
+- [x] pnpm workspace + TS strict config wired
+- [x] `packages/schema` — Zod event + tool schemas (compiling)
+- [x] `packages/event-store` — SQLite DDL + append-only log (WAL mode); projection
+  table DDL defined, population deferred to Phase 1+
+- [x] Append/replay tested
 
-**Exit-gate:** compiling schema package + empty event store with append/replay
-tested.
+**Exit-gate:** ✅ compiling schema package + event store with append/replay
+tested (`pnpm -r build && pnpm -r typecheck && pnpm -r test` green; 15 tests).
 
 ## Phase 1 — MCP-server-with-many-clients core  (HEADLESS, 2–3 wks)
 

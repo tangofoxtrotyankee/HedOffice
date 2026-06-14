@@ -2,9 +2,9 @@
 
 A virtual workplace for your AI Agents.
 
-> **Status:** pre-alpha · **Phase 0 (bootstrap)** — this repo currently contains
-> the architecture docs, phase roadmap, and an empty monorepo skeleton. No
-> runnable code yet. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status:** pre-alpha · **Phase 0 complete** — the `schema` and `event-store`
+> packages build, typecheck, and test (`pnpm check`). Later packages are still
+> skeletons. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## What is HedOffice?
 
