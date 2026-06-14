@@ -34,14 +34,16 @@ tested (`pnpm -r build && pnpm -r typecheck && pnpm -r test` green; 15 tests).
 notebook + task tools. Implement presence inference (last-call time, in-flight
 count, ping).
 
-- [ ] Stateful Streamable HTTP server, per-session `McpServer` factory
-- [ ] `notebook.*` and `task.*` tools
-- [ ] Presence inference engine (no `presence.set` tool)
-- [ ] Multi-client test harness in `tools/harness`
+- [x] Stateful Streamable HTTP server, per-session `McpServer` factory
+- [x] `notebook.*` and `task.*` tools (+ `cubicle.status`)
+- [x] Presence inference engine (no `presence.set` tool)
+- [x] Multi-client test harness in `tools/harness`
 
-**Exit-gate:** a CLI/script spins up **3+ mock MCP clients** concurrently, each
-with **isolated** notebook/task state; tool calls route back to the correct
-client; sessions clean up on `transport.onclose`; live presence shows in logs.
+**Exit-gate:** ✅ `tools/harness` (`pnpm --filter @hedoffice/harness multi-client`)
+spins up 3+ mock MCP clients concurrently, each with **isolated** notebook/task
+state; tool calls route back to the correct client; sessions clean up on
+`transport.onclose`; live presence transitions show in logs. Covered by 13
+integration/unit tests (8 core + 5 server).
 
 ## Phase 2 — Local voice loop  (HEADLESS, 2–3 wks)
 

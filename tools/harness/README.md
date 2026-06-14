@@ -1,10 +1,24 @@
-# harness
+# @hedoffice/harness
 
-Headless test/benchmark scripts:
-- **Phase 1:** spin up 3+ mock MCP clients concurrently; prove isolated
-  notebook/task state, correct response routing, session cleanup on
-  `onclose`, and live presence in logs.
-- **Phase 2:** measure voice glass-to-glass latency (target <800 ms) and
-  verify barge-in.
+Headless test/benchmark scripts.
 
-_Placeholder — no code yet. See [docs/ROADMAP.md](../../docs/ROADMAP.md)._
+## `multi-client` (Phase 1 — done)
+
+Spins up N mock MCP clients against one `HedOfficeServer` and proves the Phase 1
+exit-gate: isolated per-cubicle state, correct response routing, live inferred
+presence, and session cleanup on disconnect.
+
+```sh
+pnpm --filter @hedoffice/harness multi-client      # 3 agents (default)
+pnpm --filter @hedoffice/harness multi-client 5    # N agents
+```
+
+It asserts as it goes and exits non-zero on any failure, so it doubles as a
+smoke test.
+
+## Phase 2 (planned)
+
+A voice glass-to-glass latency benchmark (target <800 ms) + barge-in check, once
+`packages/audio` exists.
+
+See [docs/ROADMAP.md](../../docs/ROADMAP.md).
