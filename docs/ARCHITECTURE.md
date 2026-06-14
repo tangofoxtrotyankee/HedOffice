@@ -197,10 +197,11 @@ color + optional motion ([DESIGN.md §presence](DESIGN.md), ADR-009):
 | `offline` | `·` | `ping` fails / `transport.onclose` |
 
 **Implementation status:** `PresenceEngine` (`packages/core/src/presence.ts`)
-infers `offline`/`idle`/`running` today; `thinking` and `blocked` are wired in
-**Phase 3**, when the voice channel and approval gate provide the signals. The
-schema enum already includes all five, so this is purely added inference rules,
-not a schema change.
+infers all five states (Phase 3), with precedence
+`offline > blocked > running > thinking > idle`. `thinking` comes from
+`ChannelService.userSpoke` (a user utterance awaiting a reply); `blocked` from
+the `ApprovalGate` while a mutating tool awaits the human. The schema enum
+already included all five, so this was added inference rules, not a schema change.
 
 ## How a BYO agent connects (openclaw/Hermes-style)
 

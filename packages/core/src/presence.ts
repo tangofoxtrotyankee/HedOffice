@@ -14,15 +14,20 @@ export interface PresenceSnapshot {
 interface PresenceState {
   connected: boolean;
   inFlight: number;
+  /** Pending approval gates (elicitation) — drives the `blocked` state. */
+  blocked: number;
+  /** A user utterance is awaiting an agent reply — drives `thinking`. */
+  awaitingReply: boolean;
   lastActivity: number;
   status: PresenceStatus;
 }
 
 /**
  * Infers cubicle presence from MCP activity — never self-reported (ADR-003).
- * v1 (Phase 1) derives: offline (not connected), running (>=1 in-flight call),
- * idle (connected, none in-flight). `thinking`/`blocked` arrive with the voice
- * channel and approval gate in Phase 3.
+ * The full 5-state model (precedence high→low): `offline` (not connected),
+ * `blocked` (approval/elicitation pending), `running` (>=1 in-flight tool call),
+ * `thinking` (heard a user utterance, no reply yet), `idle` (connected, quiet).
+ * `blocked`/`thinking` are wired in Phase 3 where the signals exist.
  *
  * Each transition appends a `presence.changed` event and notifies `onChange`.
  */
@@ -37,7 +42,14 @@ export class PresenceEngine {
   private state(agentId: string): PresenceState {
     let s = this.states.get(agentId);
     if (!s) {
-      s = { connected: false, inFlight: 0, lastActivity: 0, status: "offline" };
+      s = {
+        connected: false,
+        inFlight: 0,
+        blocked: 0,
+        awaitingReply: false,
+        lastActivity: 0,
+        status: "offline",
+      };
       this.states.set(agentId, s);
     }
     return s;
@@ -45,7 +57,9 @@ export class PresenceEngine {
 
   private derive(s: PresenceState): PresenceStatus {
     if (!s.connected) return "offline";
+    if (s.blocked > 0) return "blocked";
     if (s.inFlight > 0) return "running";
+    if (s.awaitingReply) return "thinking";
     return "idle";
   }
 
@@ -92,6 +106,38 @@ export class PresenceEngine {
     s.inFlight = Math.max(0, s.inFlight - 1);
     s.lastActivity = Date.now();
     this.recompute(agentId, "tool_call_settled");
+  }
+
+  /** A user utterance arrived; the agent owes a reply → `thinking`. */
+  userSpoke(agentId: string): void {
+    const s = this.state(agentId);
+    s.awaitingReply = true;
+    s.lastActivity = Date.now();
+    this.recompute(agentId, "user_spoke");
+  }
+
+  /** The agent replied (e.g. `channel.say`); clears the pending reply. */
+  agentReplied(agentId: string): void {
+    const s = this.state(agentId);
+    s.awaitingReply = false;
+    s.lastActivity = Date.now();
+    this.recompute(agentId, "agent_said");
+  }
+
+  /** An approval gate opened → `blocked` until resolved. */
+  blockStart(agentId: string): void {
+    const s = this.state(agentId);
+    s.blocked += 1;
+    s.lastActivity = Date.now();
+    this.recompute(agentId, "approval_pending");
+  }
+
+  /** An approval gate resolved. */
+  blockEnd(agentId: string): void {
+    const s = this.state(agentId);
+    s.blocked = Math.max(0, s.blocked - 1);
+    s.lastActivity = Date.now();
+    this.recompute(agentId, "approval_resolved");
   }
 
   snapshot(agentId: string): PresenceSnapshot {

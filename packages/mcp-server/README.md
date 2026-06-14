@@ -15,8 +15,13 @@ tools land in Phase 3).
   `127.0.0.1:<port>` allow-listed; pass `allowedOrigins` to enforce `403` on a
   present-but-unlisted Origin (per the 2025-11-25 spec).
 - **Tools:** `notebook.read/write/append`, `task.create/update/list`,
-  `cubicle.status`. Every call updates inferred presence and writes a
-  `tool.called` / `tool.result` audit pair.
+  `cubicle.status`, and the voice channel `channel.listen` / `channel.say`. Every
+  call updates inferred presence and writes a `tool.called` / `tool.result` audit
+  pair.
+- **Approval gate:** record-mutating tools (`notebook.*`, `task.*`) route through
+  the human approval gate before executing — denied calls return an `isError`
+  result and never run. Configure via `new Office({ approval: { defaultPolicy,
+  approver } })`.
 
 ```ts
 import { HedOfficeServer } from "@hedoffice/mcp-server";

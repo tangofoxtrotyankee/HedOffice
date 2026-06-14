@@ -69,6 +69,16 @@ Each tool is tagged with a sensitivity level:
   84.2% auto-approval attack figure, the **default for mutating tools is
   `prompt`, never `auto`**.
 
+> **Implemented (Phase 3):** `ApprovalGate` in `@hedoffice/core` gates the
+> record-mutating tools (`notebook.write`/`append`, `task.create`/`update`) — the
+> set in `MUTATING_TOOLS`. `channel.say` is *not* gated (it is the agent's
+> conversational output, not a record mutation). The gate emits
+> `approval.requested`/`approval.resolved` and flips presence to `blocked` while
+> pending. The human decision comes from an injected `approver` (the UI in Phase
+> 4; MCP elicitation is the transport). If no approver is wired in headless dev,
+> the gate falls through to allow **and logs an `audit.security_event`** — so
+> production must register an approver. Default policy is `prompt`.
+
 ## Audit logging
 
 Every tool call, result, approval decision, connection, and security event is an

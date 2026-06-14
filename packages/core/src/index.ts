@@ -6,4 +6,8 @@ export { CubicleState } from "./cubicle.js";
 export type { Task } from "./cubicle.js";
 export { PresenceEngine } from "./presence.js";
 export type { PresenceSnapshot } from "./presence.js";
+export { ChannelService } from "./channel.js";
+export type { Utterance, ListenResult } from "./channel.js";
+export { ApprovalGate, MUTATING_TOOLS } from "./approvals.js";
+export type { Approver, ApprovalRequest, ApprovalGateOptions } from "./approvals.js";
 export { cubicleOf, sha256 } from "./ids.js";
