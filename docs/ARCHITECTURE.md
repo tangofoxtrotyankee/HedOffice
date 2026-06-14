@@ -123,6 +123,24 @@ Concrete impls: `LocalSttProvider`/`LocalTtsProvider` (sherpa-onnx) and
 config + key presence. The interface **mandates `cancel()`** so barge-in works
 identically across providers.
 
+**TTS provider matrix (and where new engines slot in):**
+
+| Provider | Runtime | Hardware | Role |
+|---|---|---|---|
+| Piper | ONNX / Node addon | CPU | low-latency default |
+| Kokoro-82M | ONNX / Node addon | CPU | quality default |
+| ElevenLabs | hosted API | none | hosted drop-in (BYO key) |
+| **VoxCPM** *(potential)* | Python/PyTorch sidecar | NVIDIA GPU (~8 GB) | premium / voice-cloning, opt-in |
+
+[VoxCPM](https://github.com/OpenBMB/VoxCPM) (Apache-2.0, 48 kHz, 30 languages,
+voice cloning) is **TTS-only** and **GPU-bound** — official runtime is PyTorch +
+CUDA, RTF ~0.30 on an RTX 4090 — so it can't be the CPU out-of-the-box default,
+but it fits the `TtsProvider` slot as an optional premium engine running as a
+local Python sidecar over IPC (supports `generate_streaming()`, so per-sentence
+streaming + `cancel()` barge-in are feasible). It never replaces STT/VAD. Watch
+the community CPU/ONNX ports (`VoxCPM.cpp`, ONNX variants) — if one matures with
+usable CPU RTF, revisit it as a higher-quality CPU option.
+
 **Loop:** renderer mic → (WebRTC or local WebSocket) → STT → transcript written
 as a `channel.user_spoke` event the agent reads → agent calls `channel.say(text)`
 → TTS → audio streamed back to renderer. **Barge-in:** a VAD monitor runs on the

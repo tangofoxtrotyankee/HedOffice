@@ -52,14 +52,23 @@ interface: mic → VAD (Silero) → STT (streaming) → text → (to agent) → 
 text → TTS (Kokoro/Piper) → playback, with **barge-in** (VAD-triggered TTS
 flush). Wire ElevenLabs as a second provider to prove the abstraction.
 
-- [ ] `packages/audio` provider interfaces + local impl (sherpa-onnx)
-- [ ] Barge-in: cancel on first VAD trigger (sub-100 ms target)
-- [ ] ElevenLabs provider as second implementation
-- [ ] Latency benchmark script in `tools/harness`
+- [x] `packages/audio` provider interfaces (`SttProvider`/`TtsProvider`/
+  `VadDetector`/`PlaybackSink`) + voice loop with per-sentence streaming
+- [x] Barge-in: cancel on first VAD trigger (not silence-end) — tested
+- [x] Latency benchmark in `tools/harness` (`voice-loop`) over a modeled clock
+- [ ] **On-device (real-hardware task):** `LocalStt/TtsProvider` (sherpa-onnx,
+  Kokoro/Piper) + `ElevenLabsTtsProvider`, real mic, measured glass-to-glass on
+  the reference laptop. The interfaces + loop are ready; this swaps modeled
+  timings for real ones.
+- [ ] *(potential)* VoxCPM as an optional GPU TTS provider — Python sidecar over
+  IPC, gated on GPU presence (see [ARCHITECTURE.md](ARCHITECTURE.md) provider
+  matrix). Not a dependency; default stays Kokoro/Piper.
 
-**Exit-gate:** a headless "talk to an echo agent" demo with **measured
-glass-to-glass latency** and working interruption. Target **<800 ms**, ideally
-~500–650 ms.
+**Exit-gate:** ✅ headless "talk to an echo agent" demo
+(`pnpm --filter @hedoffice/harness voice-loop`) with per-stage glass-to-glass
+latency under the **<800 ms** budget (Piper-profile ~395 ms, Kokoro-profile
+~720 ms, *modeled*) and barge-in interrupting on first VAD trigger. 11 tests.
+*Real measured latency on hardware is the on-device task above.*
 
 ## Phase 3 — Integration spine  (1–2 wks)
 

@@ -46,15 +46,18 @@ pnpm -r test          # vitest
 pnpm check            # build + typecheck + test
 ```
 
-Run the Phase 1 proof (N concurrent mock agents, isolation + presence):
+Run the headless proofs:
 
 ```sh
-pnpm --filter @hedoffice/harness multi-client      # or: multi-client 5
+pnpm --filter @hedoffice/harness multi-client      # Phase 1: N isolated agents + presence
+pnpm --filter @hedoffice/harness voice-loop        # Phase 2: echo-agent voice loop + barge-in
 ```
 
 ## Next increment
 
-Phase 2 (headless local voice loop): `packages/audio` — `SttProvider` /
-`TtsProvider` abstraction (sherpa-onnx local + ElevenLabs hosted) with barge-in,
-and a glass-to-glass latency benchmark in `tools/harness`. See
+Phase 3 (integration spine): wire the voice loop to the MCP layer — `channel.listen`
+delivers `channel.user_spoke`, `channel.say` feeds `VoiceLoop.speak`; add the
+elicitation approval gate and extend presence to `thinking`/`blocked`. In
+parallel, the on-device audio work (real sherpa-onnx/ElevenLabs providers +
+measured latency) lands the real engines behind the Phase 2 interfaces. See
 [ROADMAP.md](ROADMAP.md).

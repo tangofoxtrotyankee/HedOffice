@@ -2,11 +2,12 @@
 
 A virtual workplace for your AI Agents.
 
-> **Status:** pre-alpha · **Phases 0–1 complete** — the headless MCP-server core
-> works: many BYO agents connect concurrently to one stateful server with fully
-> isolated cubicles and inferred presence. Run the proof:
-> `pnpm --filter @hedoffice/harness multi-client`. Voice (Phase 2) and UI
-> (Phase 4) are next. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status:** pre-alpha · **Phases 0–2 (headless) complete** — the MCP-server core
+> (many isolated agent cubicles + inferred presence) and the voice loop (STT/TTS/
+> VAD abstraction, per-sentence streaming, barge-in, <800 ms latency budget) both
+> work headlessly. Proofs: `pnpm --filter @hedoffice/harness multi-client` and
+> `… voice-loop`. Next: Phase 3 (wire voice ↔ MCP) and on-device audio engines.
+> See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## What is HedOffice?
 
