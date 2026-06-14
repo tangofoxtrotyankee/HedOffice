@@ -63,7 +63,8 @@ multi-agent layer is mostly routing pre-existing events**, not a re-architecture
 - [`docs/DESIGN.md`](docs/DESIGN.md) — the visual design system ("warm mission-control TUI"): palette, type, box-drawing layout, presence glyphs, tokens
 - [`docs/SECURITY.md`](docs/SECURITY.md) — threat model and v1 security baseline
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — architecture decision records (locked + open)
-- [`docs/DEV_SETUP.md`](docs/DEV_SETUP.md) — intended toolchain (planned, not yet wired)
+- [`docs/DEV_SETUP.md`](docs/DEV_SETUP.md) — toolchain, commands, and the headless proofs
+- [`docs/TESTING.md`](docs/TESTING.md) — manual / on-device QA checklist (what CI can't verify)
 
 ## License
 

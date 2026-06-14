@@ -158,7 +158,11 @@ Threat-model pass, secret-storage audit, tool-permission gates, packaging
 - [x] **Approval gate ↔ renderer IPC:** the renderer's `ApprovalModal` is now the
   real human gate — an `ApprovalBridge` forwards pending approvals to the modal and
   resolves the gate on the user's decision; the floor refreshes on every event.
-- [ ] On-device audio engines (sherpa-onnx/ElevenLabs) behind the Phase 2 interfaces
+- [x] **Audio providers scaffolded:** `ElevenLabsTtsProvider` (streaming + cancel,
+  unit-tested against a fake socket) + `selectTtsProvider` policy + sherpa-onnx
+  `Local*Provider` skeletons. On-device wiring + real latency is a dev-machine task
+  ([TESTING.md §4](TESTING.md)).
+- [ ] On-device audio: implement the sherpa-onnx bodies + measure glass-to-glass
 - [ ] Threat-model pass + tool-permission policy UI
 - [ ] Packaging (`electron-builder`) + installers, docs, OSS release
 
