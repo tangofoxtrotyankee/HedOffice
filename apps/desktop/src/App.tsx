@@ -1,11 +1,13 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Floor } from "./Floor";
 import { ExpandedCubicle } from "./ExpandedCubicle";
+import { ApprovalModal } from "./ApprovalModal";
 import { DepartmentRail } from "./DepartmentRail";
 import { RoomsPreview } from "./RoomsPreview";
 import { ALL_DEPARTMENTS } from "./rail";
-import { sampleDataSource, type DataSource } from "./datasource";
+import { cubicleViewToData, sampleDataSource, type DataSource } from "./datasource";
 import type { CubicleData } from "./cubicle";
+import type { ApprovalRequestDTO } from "./shell/ipc-contract";
 
 type Theme = "light" | "dark";
 
@@ -39,12 +41,29 @@ export function App({ dataSource = sampleDataSource }: { dataSource?: DataSource
   const [rooms, setRooms] = useState(false);
   const [dept, setDept] = useState<string>(ALL_DEPARTMENTS);
   const [walkedInto, setWalkedInto] = useState<CubicleData | null>(null);
+  const [floor, setFloor] = useState<CubicleData[]>(() => dataSource.getFloor());
+  const [approval, setApproval] = useState<ApprovalRequestDTO | null>(null);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
-  const floor = dataSource.getFloor();
+  // In the Electron shell, drive the approval gate from the modal and refresh
+  // the floor whenever the event log changes. No-op on the plain web build.
+  useEffect(() => {
+    const api = window.hedoffice;
+    if (!api) return;
+    const refresh = () =>
+      void api.getFloor().then((views) => setFloor(views.map(cubicleViewToData)));
+    refresh();
+    const offApproval = api.onApprovalRequest(setApproval);
+    const offUpdate = api.onUpdate(refresh);
+    return () => {
+      offApproval();
+      offUpdate();
+    };
+  }, []);
+
   const cubicles = dept === ALL_DEPARTMENTS ? floor : floor.filter((c) => c.name === dept);
 
   return (
@@ -60,6 +79,16 @@ export function App({ dataSource = sampleDataSource }: { dataSource?: DataSource
 
       {walkedInto && (
         <ExpandedCubicle cubicle={walkedInto} onClose={() => setWalkedInto(null)} />
+      )}
+
+      {approval && (
+        <ApprovalModal
+          action={approval.action}
+          onResolve={(decision) => {
+            void window.hedoffice?.resolveApproval(approval.approvalId, decision);
+            setApproval(null);
+          }}
+        />
       )}
 
       <footer className="control-bar">

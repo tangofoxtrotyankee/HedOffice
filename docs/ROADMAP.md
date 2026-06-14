@@ -155,7 +155,9 @@ Threat-model pass, secret-storage audit, tool-permission gates, packaging
   `electron:dev` launch path. (`apps/desktop/electron/`)
 - [x] **Secret storage:** `SecretStore` interface + `ElectronSecretStore`
   (`safeStorage`, encrypted userData file, no plaintext fallback); main-process only.
-- [ ] Renderer ↔ live `channel.*`/approval IPC (approval modal → real gate)
+- [x] **Approval gate ↔ renderer IPC:** the renderer's `ApprovalModal` is now the
+  real human gate — an `ApprovalBridge` forwards pending approvals to the modal and
+  resolves the gate on the user's decision; the floor refreshes on every event.
 - [ ] On-device audio engines (sherpa-onnx/ElevenLabs) behind the Phase 2 interfaces
 - [ ] Threat-model pass + tool-permission policy UI
 - [ ] Packaging (`electron-builder`) + installers, docs, OSS release

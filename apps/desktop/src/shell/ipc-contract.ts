@@ -1,4 +1,8 @@
-import type { CubicleDetailView, CubicleView } from "@hedoffice/schema";
+import type {
+  ApprovalDecision,
+  CubicleDetailView,
+  CubicleView,
+} from "@hedoffice/schema";
 
 /**
  * The IPC contract between the Electron main process (which runs
@@ -8,9 +12,14 @@ import type { CubicleDetailView, CubicleView } from "@hedoffice/schema";
  */
 
 export const IPC = {
+  // renderer -> main (invoke/handle)
   getFloor: "hedoffice:get-floor",
   getDetail: "hedoffice:get-detail",
   registerAgent: "hedoffice:register-agent",
+  resolveApproval: "hedoffice:resolve-approval",
+  // main -> renderer (send/on)
+  approvalRequest: "hedoffice:approval-request",
+  update: "hedoffice:update",
 } as const;
 
 export interface RegisteredAgentDTO {
@@ -18,11 +27,25 @@ export interface RegisteredAgentDTO {
   token: string;
 }
 
+/** A pending approval surfaced to the human (the renderer's approval modal). */
+export interface ApprovalRequestDTO {
+  approvalId: string;
+  agentId: string;
+  action: string;
+  tool: string;
+}
+
 /** The API the preload script exposes on `window.hedoffice`. */
 export interface HedofficeApi {
   getFloor(): Promise<CubicleView[]>;
   getDetail(agentId: string): Promise<CubicleDetailView>;
   registerAgent(name: string): Promise<RegisteredAgentDTO>;
+  /** Settle a pending approval (from the approval modal). */
+  resolveApproval(approvalId: string, decision: ApprovalDecision): Promise<void>;
+  /** Subscribe to approval requests; returns an unsubscribe fn. */
+  onApprovalRequest(cb: (req: ApprovalRequestDTO) => void): () => void;
+  /** Subscribe to "floor changed" pings (re-fetch on fire); returns unsubscribe. */
+  onUpdate(cb: () => void): () => void;
 }
 
 declare global {

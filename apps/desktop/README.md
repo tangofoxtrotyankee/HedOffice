@@ -57,13 +57,20 @@ in prod, `InMemorySecretStore` in dev/tests.
 
 - `src/shell/ipc-contract.ts` — the IPC channels + `window.hedoffice` API (browser-safe).
 - `electron/handlers.ts` — IPC handlers over an `Office` (unit-tested headlessly).
+- `electron/approval-bridge.ts` — forwards approval-gate requests to the renderer's
+  `ApprovalModal` and resolves the gate on the user's decision (unit-tested).
 - `electron/secrets.ts` / `secrets-electron.ts` — secret storage.
 - `electron/main.ts` / `preload.ts` — Electron glue (typechecked; launched via
   `electron:dev`, not CI). Packaging: `electron-builder.yml` + `npx electron-builder`.
+
+The renderer drives the **real approval gate**: in the shell, `App` subscribes to
+`onApprovalRequest` and renders the top-level `ApprovalModal`; the decision flows
+back through `resolveApproval`. The floor re-fetches on every `onUpdate` ping. On
+the plain web build (`pnpm dev`) these are inert and the sample floor is shown.
 
 > Electron can be typechecked + the main-process logic unit-tested here, but it
 > can't be launched headlessly (no display). The renderer (`pnpm dev`) and the
 > previews run anywhere.
 
-Next: surface live `channel.*`/approval events to the renderer over IPC (the
-approval modal → real gate), and the on-device audio engines.
+Next: the on-device audio engines (sherpa-onnx/ElevenLabs) behind the Phase 2
+interfaces, and `electron-builder` packaging.
