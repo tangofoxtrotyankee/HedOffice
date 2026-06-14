@@ -25,14 +25,20 @@ const { transcript } = await loop.listen(micFrames);
 await loop.speak(agentText, sink, new BargeInController());
 ```
 
-## Real engine adapters (to implement on-device)
+## Providers (`src/providers/`)
 
-The same interfaces back the production providers; these need model weights, API
-keys, or a GPU and a real mic, so they're built/measured on a real machine:
-- `LocalSttProvider` / `LocalTtsProvider` — **sherpa-onnx** (Kokoro/Piper, CPU). Default.
-- `ElevenLabsTtsProvider` — hosted drop-in (BYO key).
-- `VoxCpmTtsProvider` — *potential* premium GPU provider via a Python sidecar
-  (see [docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md) provider matrix).
+- **`ElevenLabsTtsProvider`** — implemented: streams raw PCM from the ElevenLabs
+  endpoint, yields `AudioChunk`s, and `cancel()` aborts mid-stream (barge-in). The
+  network call is injectable, so streaming + cancel are **unit-tested** without a
+  key or socket; real audio/latency is verified on a dev machine.
+- **`selectTtsProvider`** — pure provider-selection policy (local by default; swap
+  to hosted only when opted in + a key is present).
+- **`LocalSttProvider` / `LocalTtsProvider`** — sherpa-onnx skeletons (CPU
+  default). The interfaces are implemented; the native engine + Kokoro/Piper/
+  Zipformer models are wired and measured on a real machine — until then they
+  throw a clear setup error. See [docs/TESTING.md](../../docs/TESTING.md) → Audio.
+- **VoxCPM** — *potential* premium GPU provider via a Python sidecar (see
+  [docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md) provider matrix).
 
 ## Develop
 
