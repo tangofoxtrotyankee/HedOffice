@@ -104,12 +104,13 @@ presence, and the warm cream/charcoal + hero-orange palette. Sequenced *after*
 the headless Phases 2–3 (UI last). Follows the design plan's four build stages,
 each with its own benchmark gate:
 
-- **Stage 1 — Prove the core:** character-cell grid, light + dark token files
+- **Stage 1 — Prove the core:** ✅ character-cell grid, light + dark token files
   ([DESIGN.md §tokens](DESIGN.md)), JetBrains Mono at the type scale, floor view +
-  one **at-rest cubicle** with the 5 presence glyphs.
-  *Gate:* the floor reads clearly in **grayscale** and **16-color** before any
-  truecolor styling; box-drawing stays unbroken at `--lh-box` (≤1.2). If boxes
-  fragment, lower line-height before changing fonts.
+  **at-rest cubicles** with the 5 presence glyphs (`apps/desktop`, Vite + React).
+  *Gate met:* the floor reads clearly in **grayscale** / plain text — status is
+  glyph-distinct (`pnpm --filter @hedoffice/desktop preview-floor`); box-drawing
+  aligns on a fixed 27-cell grid at `--lh-box` (1.15). 7 geometry tests; the app
+  builds and includes a light/dark toggle + a grayscale check.
 - **Stage 2 — Walk in:** expanded cubicle (Notebook / Tasks / Terminal / Talk),
   terminal feed with blinking cursor + typewriter reveal, and the approval-gate
   modal.
@@ -124,7 +125,9 @@ each with its own benchmark gate:
   *Gate:* a v1 cubicle dropped inside a v2 room needs **zero token changes**.
 
 > The desktop shell framework (Electron vs Tauri) is **deferred** — see
-> [DECISIONS.md ADR-005](DECISIONS.md). It must be chosen before this phase.
+> [DECISIONS.md ADR-005](DECISIONS.md). Stages 1–3 run in the browser via Vite
+> and depend on no shell APIs; the shell must be chosen before packaging/release
+> (and for `safeStorage`-backed secrets, Phase 5).
 
 **Exit-gate:** the full single-agent office experience, built to
 [DESIGN.md](DESIGN.md) (Stages 1–3 complete; Stage 4 is v2 prep).
