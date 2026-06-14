@@ -10,4 +10,5 @@ export { ChannelService } from "./channel.js";
 export type { Utterance, ListenResult } from "./channel.js";
 export { ApprovalGate, MUTATING_TOOLS } from "./approvals.js";
 export type { Approver, ApprovalRequest, ApprovalGateOptions } from "./approvals.js";
+export { buildFloorView, buildCubicleDetail } from "./views.js";
 export { cubicleOf, sha256 } from "./ids.js";

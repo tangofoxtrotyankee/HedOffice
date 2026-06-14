@@ -52,6 +52,7 @@ Run the headless proofs:
 pnpm --filter @hedoffice/harness multi-client      # Phase 1: N isolated agents + presence
 pnpm --filter @hedoffice/harness voice-loop        # Phase 2: echo-agent voice loop + barge-in
 pnpm --filter @hedoffice/harness integration       # Phase 3: voice ↔ MCP ↔ approval gate
+pnpm --filter @hedoffice/harness floor-view        # Live data: floor rendered from the event log
 pnpm --filter @hedoffice/desktop preview-floor     # Phase 4 Stage 1: floor view as text
 pnpm --filter @hedoffice/desktop preview-walkin    # Phase 4 Stage 2: feed + approval box as text
 pnpm --filter @hedoffice/desktop preview-rooms     # Phase 4 Stage 4: v1 cubicles inside v2 rooms
@@ -60,11 +61,14 @@ pnpm --filter @hedoffice/desktop dev               # …or the live UI (Vite, 12
 
 ## Next increment
 
-Phases 0–4 are complete. What remains:
+Phases 0–4 are complete, and the **live-data contract** is in place: core's
+`buildFloorView` / `buildCubicleDetail` render the floor from the event log, and
+the UI consumes it through a `DataSource` seam (`apps/desktop/src/datasource.ts`).
+What remains:
+- **Desktop shell (Electron — ADR-005):** run `@hedoffice/core` + the MCP server
+  in the main process, hand `CubicleView[]` to the renderer over IPC (the
+  `liveDataSource`), and back secrets with `safeStorage`.
 - **On-device audio:** implement `LocalStt/TtsProvider` (sherpa-onnx) + the
   ElevenLabs provider behind the Phase 2 interfaces; measure real glass-to-glass.
-- **Live data:** wire the UI to the event-log projections (replace the desktop
-  sample data) — the floor/cubicles read from `@hedoffice/core`.
-- **Phase 5 — hardening & release:** threat-model pass, secret-storage audit, the
-  **Electron vs Tauri** shell decision (ADR-005) + `safeStorage`-backed secrets,
+- **Phase 5 — hardening & release:** threat-model pass, secret-storage audit,
   packaging/installers, and the OSS release. See [ROADMAP.md](ROADMAP.md).

@@ -4,7 +4,7 @@ import { ExpandedCubicle } from "./ExpandedCubicle";
 import { DepartmentRail } from "./DepartmentRail";
 import { RoomsPreview } from "./RoomsPreview";
 import { ALL_DEPARTMENTS } from "./rail";
-import { SAMPLE_FLOOR } from "./sample";
+import { sampleDataSource, type DataSource } from "./datasource";
 import type { CubicleData } from "./cubicle";
 
 type Theme = "light" | "dark";
@@ -31,7 +31,7 @@ function Chip({
  * an opt-in scanline overlay. Everything calm; `prefers-reduced-motion` removes
  * all motion.
  */
-export function App(): ReactNode {
+export function App({ dataSource = sampleDataSource }: { dataSource?: DataSource }): ReactNode {
   const [theme, setTheme] = useState<Theme>("dark");
   const [grayscale, setGrayscale] = useState(false);
   const [scanlines, setScanlines] = useState(false);
@@ -44,13 +44,13 @@ export function App(): ReactNode {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
-  const cubicles =
-    dept === ALL_DEPARTMENTS ? SAMPLE_FLOOR : SAMPLE_FLOOR.filter((c) => c.name === dept);
+  const floor = dataSource.getFloor();
+  const cubicles = dept === ALL_DEPARTMENTS ? floor : floor.filter((c) => c.name === dept);
 
   return (
     <div className={`app${grayscale ? " grayscale" : ""}${scanlines ? " scanlines" : ""}`}>
       <main className="stage">
-        <DepartmentRail cubicles={SAMPLE_FLOOR} selected={dept} onSelect={setDept} />
+        <DepartmentRail cubicles={floor} selected={dept} onSelect={setDept} />
         {rooms ? (
           <RoomsPreview onSelect={setWalkedInto} />
         ) : (

@@ -9,7 +9,8 @@
     "multi-client": "tsx src/multi-client.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "voice-loop": "tsx src/voice-loop.ts",
-    "integration": "tsx src/integration.ts"
+    "integration": "tsx src/integration.ts",
+    "floor-view": "tsx src/floor-view.ts"
   },
   "dependencies": {
     "@hedoffice/core": "workspace:*",
