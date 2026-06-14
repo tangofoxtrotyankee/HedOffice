@@ -2,7 +2,7 @@
 
 A virtual workplace for your AI Agents.
 
-> **Status:** pre-alpha · **Phases 0–3 (headless) complete; Phase 4 Stages 1–2
+> **Status:** pre-alpha · **Phases 0–3 (headless) complete; Phase 4 Stages 1–3
 > in progress** — the MCP-server core (isolated cubicles + 5-state presence), the
 > voice loop (STT/TTS/VAD abstraction, barge-in, <800 ms budget), and the
 > integration spine (voice ↔ `channel.*` ↔ approval gate + audit) all work

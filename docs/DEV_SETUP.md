@@ -59,8 +59,9 @@ pnpm --filter @hedoffice/desktop dev               # …or the live UI (Vite, 12
 
 ## Next increment
 
-Phase 4 **Stage 3** (warmth & polish): hover/focus + slow status motion, the
-opt-in scanline toggle, the department rail + rounded bottom bar. In parallel,
-the on-device audio work (real sherpa-onnx/ElevenLabs providers + measured
-latency) lands the real engines behind the Phase 2 interfaces. See
-[ROADMAP.md](ROADMAP.md).
+Phase 4 **Stage 4** (v2 scaffolding, additive): double-line room containers,
+tee-joined wall boards, connector glyphs — container styles only, no token
+changes. In parallel, the on-device audio work (real sherpa-onnx/ElevenLabs
+providers + measured latency) lands the real engines behind the Phase 2
+interfaces, and Phase 5 covers hardening + the Electron/Tauri shell decision +
+packaging. See [ROADMAP.md](ROADMAP.md).

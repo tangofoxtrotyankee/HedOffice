@@ -119,10 +119,12 @@ each with its own benchmark gate:
   *Gate met:* the approval box reads unmistakably in monochrome (verbatim action +
   ✓/✗ glyph-coded choices — `pnpm --filter @hedoffice/desktop preview-walkin`);
   all motion respects `prefers-reduced-motion`. 6 panel tests.
-- **Stage 3 — Warmth & polish:** hover/focus + slow status motion, the opt-in
-  scanline toggle, the department rail + rounded bottom bar.
-  *Gate:* with motion on, the floor still feels **calm** (no continuous decorative
-  motion beyond cursor + slow pulses); `prefers-reduced-motion` fully neutralizes it.
+- **Stage 3 — Warmth & polish:** ✅ slow per-state status motion (pulse / spin /
+  attention; `idle`/`offline` static), hover/focus lifts, the opt-in scanline
+  toggle, the numbered **department rail** (with floor filtering) and the rounded
+  **bottom control bar** with invert-on-active toggle chips.
+  *Gate met:* the only continuous motion is the feed cursor + slow status glyphs
+  (calm); `prefers-reduced-motion` removes all of it. 3 rail/motion tests.
 - **Stage 4 — v2 scaffolding (additive):** double-line room containers,
   tee-joined wall boards, connector glyphs — *container styles only*.
   *Gate:* a v1 cubicle dropped inside a v2 room needs **zero token changes**.
