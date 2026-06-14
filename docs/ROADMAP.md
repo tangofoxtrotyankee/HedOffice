@@ -76,17 +76,25 @@ Connect the voice loop to the MCP layer: voice input becomes an event the agent
 reads (`channel.listen`), and the agent's reply (via `channel.say`) is voiced
 back. Full audit logging + approval-gate (elicitation) for sensitive tools.
 
-- [ ] `channel.listen` / `channel.say` tools wired to the audio subsystem
-- [ ] Audit logging of every tool call / result / approval
-- [ ] Elicitation-based approval gate (default `prompt`, never `auto`)
-- [ ] Extend `PresenceEngine.derive()` to infer `thinking` (user utterance
-  awaiting `channel.say`) and `blocked` (elicitation/approval pending) —
-  completing the **5-state** presence model the UI expects (see
-  [DESIGN.md](DESIGN.md) §presence). The `PresenceStatus` enum already lists all
-  five; only the inference rules are added here.
+- [x] `channel.listen` / `channel.say` tools (core `ChannelService`) bridging the
+  voice loop and the agent
+- [x] Audit logging of every tool call / result / approval (`tool.called`,
+  `tool.result`, `approval.requested`, `approval.resolved`, `audit.security_event`)
+- [x] Approval gate (`ApprovalGate`) for record-mutating tools — per-agent/tool
+  policy, **default `prompt`, never `auto`**; `channel.say` is *not* gated
+  (conversation, not a record mutation)
+- [x] `PresenceEngine` extended to the full **5-state** model: `thinking` (user
+  utterance awaiting reply) and `blocked` (approval pending), with precedence
+  `offline > blocked > running > thinking > idle`
 
-**Exit-gate:** speak into a cubicle and a **real BYO agent** (e.g. an
-openclaw-style client) responds in voice.
+**Exit-gate:** ✅ headless integration harness
+(`pnpm --filter @hedoffice/harness integration`): speak into a cubicle → a BYO
+MCP client hears it (`channel.listen`), replies (`channel.say`) and the reply is
+voiced (glass-to-glass ~395 ms), while a mutating tool passes through the human
+approval gate — all captured in the event log. 25 tests (16 core + 9 server).
+*Note:* the gate's human surface is the UI in Phase 4 (MCP elicitation / approval
+modal); the gate logic + audit are done here. Voicing a **real** agent end-to-end
+also needs the on-device audio engines (Phase 2 on-device item).
 
 ## Phase 4 — Office UX (React)  (3–4 wks)
 

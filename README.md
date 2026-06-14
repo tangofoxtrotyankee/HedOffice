@@ -2,12 +2,13 @@
 
 A virtual workplace for your AI Agents.
 
-> **Status:** pre-alpha · **Phases 0–2 (headless) complete** — the MCP-server core
-> (many isolated agent cubicles + inferred presence) and the voice loop (STT/TTS/
-> VAD abstraction, per-sentence streaming, barge-in, <800 ms latency budget) both
-> work headlessly. Proofs: `pnpm --filter @hedoffice/harness multi-client` and
-> `… voice-loop`. Next: Phase 3 (wire voice ↔ MCP) and on-device audio engines.
-> See [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status:** pre-alpha · **Phases 0–3 (headless) complete** — the MCP-server core
+> (isolated agent cubicles + 5-state inferred presence), the voice loop (STT/TTS/
+> VAD abstraction, per-sentence streaming, barge-in, <800 ms budget), and the
+> integration spine (voice ↔ `channel.*` ↔ human approval gate + audit log) all
+> work headlessly. Proofs: `pnpm --filter @hedoffice/harness multi-client`,
+> `… voice-loop`, `… integration`. Next: Phase 4 (the React "warm mission-control
+> TUI") and on-device audio engines. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## What is HedOffice?
 

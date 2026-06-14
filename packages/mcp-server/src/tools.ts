@@ -1,33 +1,45 @@
 import { randomUUID } from "node:crypto";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Office } from "@hedoffice/core";
-import { cubicleOf, sha256 } from "@hedoffice/core";
+import { cubicleOf, MUTATING_TOOLS, sha256 } from "@hedoffice/core";
 import {
+  ChannelListenInput,
+  ChannelSayInput,
   NotebookAppendInput,
   NotebookWriteInput,
   TaskCreateInput,
   TaskUpdateInput,
 } from "@hedoffice/schema";
 
-type ToolResult = { content: Array<{ type: "text"; text: string }> };
+type ToolResult = {
+  content: Array<{ type: "text"; text: string }>;
+  isError?: boolean;
+};
 
 function ok(data: unknown): ToolResult {
   return { content: [{ type: "text", text: JSON.stringify(data) }] };
 }
 
+function denied(tool: string): ToolResult {
+  return {
+    content: [{ type: "text", text: JSON.stringify({ ok: false, error: "approval_denied", tool }) }],
+    isError: true,
+  };
+}
+
 /**
- * Wraps a tool handler so every call (a) is reflected in inferred presence
- * (in-flight while running) and (b) leaves a `tool.called` / `tool.result`
- * audit trail in the event log (docs/SECURITY.md). Handlers are synchronous —
- * better-sqlite3 is sync — so presence flips back to idle as soon as they return.
+ * Wraps a tool handler so every call (a) routes mutating tools through the
+ * human approval gate (docs/SECURITY.md), (b) is reflected in inferred presence
+ * (running while in-flight, blocked while awaiting approval), and (c) leaves a
+ * `tool.called` / `tool.result` audit trail in the event log.
  */
-function tracked(
+async function tracked(
   office: Office,
   agentId: string,
   tool: string,
   args: unknown,
-  run: () => ToolResult,
-): ToolResult {
+  run: () => ToolResult | Promise<ToolResult>,
+): Promise<ToolResult> {
   const callId = randomUUID();
   const start = Date.now();
   office.presence.callStart(agentId);
@@ -38,24 +50,28 @@ function tracked(
     type: "tool.called",
     payload: { agentId, tool, argsHash: sha256(JSON.stringify(args ?? {})), callId },
   });
-  try {
-    const result = run();
+  const finish = (ok_: boolean): void => {
     office.store.append({
       agentId,
       streamId: cubicleOf(agentId),
       actor: "system",
       type: "tool.result",
-      payload: { agentId, callId, ok: true, durationMs: Date.now() - start },
+      payload: { agentId, callId, ok: ok_, durationMs: Date.now() - start },
     });
+  };
+  try {
+    if (MUTATING_TOOLS.has(tool)) {
+      const decision = await office.approvals.request(agentId, tool, tool);
+      if (decision === "deny") {
+        finish(false);
+        return denied(tool);
+      }
+    }
+    const result = await run();
+    finish(true);
     return result;
   } catch (err) {
-    office.store.append({
-      agentId,
-      streamId: cubicleOf(agentId),
-      actor: "system",
-      type: "tool.result",
-      payload: { agentId, callId, ok: false, durationMs: Date.now() - start },
-    });
+    finish(false);
     throw err;
   } finally {
     office.presence.callEnd(agentId);
@@ -63,17 +79,16 @@ function tracked(
 }
 
 /**
- * Registers the v1 notebook + task tools on a per-session McpServer, bound to a
- * single `agentId`. Because the server instance closes over `agentId`, an
- * agent's tool calls can only ever touch its own cubicle (state isolation —
- * ADR-002). `channel.*` voice tools arrive in Phase 3.
+ * Registers the v1 tool set on a per-session McpServer, bound to a single
+ * `agentId`. Because the server instance closes over `agentId`, an agent's tool
+ * calls can only ever touch its own cubicle (state isolation — ADR-002).
  */
 export function registerCubicleTools(
   server: McpServer,
   agentId: string,
   office: Office,
 ): void {
-  const { cubicles, presence } = office;
+  const { cubicles, channel, presence } = office;
 
   server.registerTool(
     "notebook.read",
@@ -149,6 +164,30 @@ export function registerCubicleTools(
         taskCount: tasks.length,
         openTasks: tasks.filter((t) => t.status !== "done").length,
       });
+    }),
+  );
+
+  server.registerTool(
+    "channel.listen",
+    {
+      description:
+        "Read recent user utterances in this cubicle since a cursor (channel.user_spoke).",
+      inputSchema: ChannelListenInput.shape,
+    },
+    (args) => tracked(office, agentId, "channel.listen", args, () =>
+      ok(channel.listen(agentId, args.sinceEventId)),
+    ),
+  );
+
+  server.registerTool(
+    "channel.say",
+    {
+      description: "Speak a reply to the user in this cubicle (enqueues TTS).",
+      inputSchema: ChannelSayInput.shape,
+    },
+    (args) => tracked(office, agentId, "channel.say", args, () => {
+      const eventId = channel.agentSaid(agentId, args.text, { voiceId: args.voiceId ?? null });
+      return ok({ ok: true, eventId });
     }),
   );
 }
