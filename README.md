@@ -2,9 +2,11 @@
 
 A virtual workplace for your AI Agents.
 
-> **Status:** pre-alpha · **Phase 0 complete** — the `schema` and `event-store`
-> packages build, typecheck, and test (`pnpm check`). Later packages are still
-> skeletons. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status:** pre-alpha · **Phases 0–1 complete** — the headless MCP-server core
+> works: many BYO agents connect concurrently to one stateful server with fully
+> isolated cubicles and inferred presence. Run the proof:
+> `pnpm --filter @hedoffice/harness multi-client`. Voice (Phase 2) and UI
+> (Phase 4) are next. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## What is HedOffice?
 
@@ -50,6 +52,7 @@ multi-agent layer is mostly routing pre-existing events**, not a re-architecture
 
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — phased build plan with deliverables and exit-gates
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — components, data model, event schema, tools, presence
+- [`docs/DESIGN.md`](docs/DESIGN.md) — the visual design system ("warm mission-control TUI"): palette, type, box-drawing layout, presence glyphs, tokens
 - [`docs/SECURITY.md`](docs/SECURITY.md) — threat model and v1 security baseline
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — architecture decision records (locked + open)
 - [`docs/DEV_SETUP.md`](docs/DEV_SETUP.md) — intended toolchain (planned, not yet wired)

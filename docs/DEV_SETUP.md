@@ -46,8 +46,15 @@ pnpm -r test          # vitest
 pnpm check            # build + typecheck + test
 ```
 
+Run the Phase 1 proof (N concurrent mock agents, isolation + presence):
+
+```sh
+pnpm --filter @hedoffice/harness multi-client      # or: multi-client 5
+```
+
 ## Next increment
 
-Phase 1: `packages/mcp-server` (stateful Streamable HTTP, per-session `McpServer`
-factory) + `packages/core` (presence engine) + a multi-client harness under
-`tools/harness`. See [ROADMAP.md](ROADMAP.md).
+Phase 2 (headless local voice loop): `packages/audio` — `SttProvider` /
+`TtsProvider` abstraction (sherpa-onnx local + ElevenLabs hosted) with barge-in,
+and a glass-to-glass latency benchmark in `tools/harness`. See
+[ROADMAP.md](ROADMAP.md).
