@@ -21,17 +21,23 @@ Phase 4 follows the design plan's four build stages (see
 > [docs/DECISIONS.md ADR-005](../../docs/DECISIONS.md). Stages 1–3 run in the
 > browser via Vite and use no shell APIs; the shell wraps this later.
 
-## Status: **Stage 1 — done**
+## Status: **Stages 1–2 — done**
 
-The floor view with at-rest cubicles and the 5 presence glyphs, light/dark design
-tokens (`tokens.css`), and JetBrains Mono. Cubicle geometry is pure
-(`cubicle.ts`) and shared by the React UI and a headless ASCII preview.
+- **Stage 1** — floor view with at-rest cubicles + the 5 presence glyphs,
+  light/dark tokens (`tokens.css`), JetBrains Mono. Cubicle geometry is pure
+  (`cubicle.ts`), shared by the UI and a headless ASCII preview.
+- **Stage 2** — "walk in": click a cubicle → expanded workspace (Notebook / Tasks /
+  Terminal / Talk) in a heavy-bordered rounded modal; terminal feed (dark inset,
+  colored verb glyphs, blinking cursor + typewriter); talk meter; and the
+  **approval-gate modal** (`ApprovalModal`). Panel formatting is pure (`panel.ts`).
 
 ```sh
 pnpm --filter @hedoffice/desktop dev             # Vite dev server (127.0.0.1:4318)
-pnpm --filter @hedoffice/desktop preview-floor   # print the floor as text (grayscale proof)
-pnpm --filter @hedoffice/desktop test            # cubicle geometry tests
+pnpm --filter @hedoffice/desktop preview-floor   # floor as text (grayscale proof)
+pnpm --filter @hedoffice/desktop preview-walkin  # feed + approval box as text
+pnpm --filter @hedoffice/desktop test            # geometry + panel tests
 pnpm --filter @hedoffice/desktop build           # production bundle
 ```
 
-Next: Stage 2 (walk in — expanded cubicle, terminal feed, approval-gate modal).
+Next: Stage 3 (warmth & polish — status motion, scanline toggle, department rail +
+bottom bar).

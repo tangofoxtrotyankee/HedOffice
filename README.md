@@ -2,15 +2,15 @@
 
 A virtual workplace for your AI Agents.
 
-> **Status:** pre-alpha · **Phases 0–3 (headless) complete; Phase 4 Stage 1
-> started** — the MCP-server core (isolated cubicles + 5-state presence), the
+> **Status:** pre-alpha · **Phases 0–3 (headless) complete; Phase 4 Stages 1–2
+> in progress** — the MCP-server core (isolated cubicles + 5-state presence), the
 > voice loop (STT/TTS/VAD abstraction, barge-in, <800 ms budget), and the
 > integration spine (voice ↔ `channel.*` ↔ approval gate + audit) all work
-> headlessly; the "warm mission-control TUI" floor view now renders in React
-> (`apps/desktop`). Proofs: `pnpm --filter @hedoffice/harness multi-client` /
-> `… voice-loop` / `… integration`, and
-> `pnpm --filter @hedoffice/desktop preview-floor`. See
-> [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> headlessly; the "warm mission-control TUI" renders in React (`apps/desktop`) —
+> floor view plus walk-in (expanded cubicle, terminal feed, approval-gate modal).
+> Proofs: `pnpm --filter @hedoffice/harness multi-client` / `… voice-loop` /
+> `… integration`, and `pnpm --filter @hedoffice/desktop preview-floor` /
+> `… preview-walkin`. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## What is HedOffice?
 

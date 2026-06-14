@@ -22,7 +22,13 @@ function CountSummary({ cubicles }: { cubicles: CubicleData[] }): ReactNode {
 }
 
 /** The office floor: a header + a grid of at-rest cubicle cards. */
-export function Floor({ cubicles }: { cubicles: CubicleData[] }): ReactNode {
+export function Floor({
+  cubicles,
+  onSelect,
+}: {
+  cubicles: CubicleData[];
+  onSelect?: (c: CubicleData) => void;
+}): ReactNode {
   return (
     <section className="floor">
       <header className="floor-header">
@@ -31,7 +37,7 @@ export function Floor({ cubicles }: { cubicles: CubicleData[] }): ReactNode {
       </header>
       <div className="floor-grid">
         {cubicles.map((c) => (
-          <CubicleCard key={c.name} cubicle={c} />
+          <CubicleCard key={c.name} cubicle={c} onSelect={onSelect} />
         ))}
       </div>
     </section>

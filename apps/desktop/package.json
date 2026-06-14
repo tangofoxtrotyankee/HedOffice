@@ -10,7 +10,8 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "preview-floor": "tsx src/preview.ts"
+    "preview-floor": "tsx src/preview.ts",
+    "preview-walkin": "tsx src/preview-expanded.ts"
   },
   "dependencies": {
     "@hedoffice/schema": "workspace:*",
