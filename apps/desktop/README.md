@@ -21,7 +21,7 @@ Phase 4 follows the design plan's four build stages (see
 > [docs/DECISIONS.md ADR-005](../../docs/DECISIONS.md). Stages 1–3 run in the
 > browser via Vite and use no shell APIs; the shell wraps this later.
 
-## Status: **Stages 1–3 — done**
+## Status: **Phase 4 complete (Stages 1–4)**
 
 - **Stage 1** — floor view with at-rest cubicles + the 5 presence glyphs,
   light/dark tokens (`tokens.css`), JetBrains Mono. Cubicle geometry is pure
@@ -34,14 +34,18 @@ Phase 4 follows the design plan's four build stages (see
   `PRESENCE_MOTION`), the numbered department rail (`DepartmentRail`, filters the
   floor), the rounded bottom control bar with invert-on-active toggle chips, and
   an opt-in scanline overlay. All motion respects `prefers-reduced-motion`.
+- **Stage 4** — v2 scaffolding (additive): `Room` (double-line department /
+  rounded informal) with tee-joined wall boards + connector glyphs (`room.ts`),
+  composing the **unchanged** `CubicleCard` — toggle "╔ Rooms (v2)" in the bar.
 
 ```sh
 pnpm --filter @hedoffice/desktop dev             # Vite dev server (127.0.0.1:4318)
 pnpm --filter @hedoffice/desktop preview-floor   # floor as text (grayscale proof)
 pnpm --filter @hedoffice/desktop preview-walkin  # feed + approval box as text
-pnpm --filter @hedoffice/desktop test            # geometry + panel tests
+pnpm --filter @hedoffice/desktop preview-rooms   # v1 cubicles inside v2 rooms
+pnpm --filter @hedoffice/desktop test            # geometry + panel + room tests
 pnpm --filter @hedoffice/desktop build           # production bundle
 ```
 
-Next: Stage 4 (v2 scaffolding — double-line room containers, tee-joined wall
-boards, connector glyphs — additive container styles only).
+Next: the desktop shell (Electron vs Tauri — ADR-005) + packaging at Phase 5,
+and wiring the floor to live event-log data (replacing the sample data).

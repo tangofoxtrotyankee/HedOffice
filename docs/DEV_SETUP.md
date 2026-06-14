@@ -54,14 +54,17 @@ pnpm --filter @hedoffice/harness voice-loop        # Phase 2: echo-agent voice l
 pnpm --filter @hedoffice/harness integration       # Phase 3: voice ↔ MCP ↔ approval gate
 pnpm --filter @hedoffice/desktop preview-floor     # Phase 4 Stage 1: floor view as text
 pnpm --filter @hedoffice/desktop preview-walkin    # Phase 4 Stage 2: feed + approval box as text
+pnpm --filter @hedoffice/desktop preview-rooms     # Phase 4 Stage 4: v1 cubicles inside v2 rooms
 pnpm --filter @hedoffice/desktop dev               # …or the live UI (Vite, 127.0.0.1:4318)
 ```
 
 ## Next increment
 
-Phase 4 **Stage 4** (v2 scaffolding, additive): double-line room containers,
-tee-joined wall boards, connector glyphs — container styles only, no token
-changes. In parallel, the on-device audio work (real sherpa-onnx/ElevenLabs
-providers + measured latency) lands the real engines behind the Phase 2
-interfaces, and Phase 5 covers hardening + the Electron/Tauri shell decision +
-packaging. See [ROADMAP.md](ROADMAP.md).
+Phases 0–4 are complete. What remains:
+- **On-device audio:** implement `LocalStt/TtsProvider` (sherpa-onnx) + the
+  ElevenLabs provider behind the Phase 2 interfaces; measure real glass-to-glass.
+- **Live data:** wire the UI to the event-log projections (replace the desktop
+  sample data) — the floor/cubicles read from `@hedoffice/core`.
+- **Phase 5 — hardening & release:** threat-model pass, secret-storage audit, the
+  **Electron vs Tauri** shell decision (ADR-005) + `safeStorage`-backed secrets,
+  packaging/installers, and the OSS release. See [ROADMAP.md](ROADMAP.md).
