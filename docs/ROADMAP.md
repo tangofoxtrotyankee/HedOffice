@@ -70,20 +70,47 @@ back. Full audit logging + approval-gate (elicitation) for sensitive tools.
 - [ ] `channel.listen` / `channel.say` tools wired to the audio subsystem
 - [ ] Audit logging of every tool call / result / approval
 - [ ] Elicitation-based approval gate (default `prompt`, never `auto`)
+- [ ] Extend `PresenceEngine.derive()` to infer `thinking` (user utterance
+  awaiting `channel.say`) and `blocked` (elicitation/approval pending) —
+  completing the **5-state** presence model the UI expects (see
+  [DESIGN.md](DESIGN.md) §presence). The `PresenceStatus` enum already lists all
+  five; only the inference rules are added here.
 
 **Exit-gate:** speak into a cubicle and a **real BYO agent** (e.g. an
 openclaw-style client) responds in voice.
 
 ## Phase 4 — Office UX (React)  (3–4 wks)
 
-Now build the spatial UI: office floor view, cubicles, walk-in interaction,
-notebook/task panels, live terminal feed (event stream), presence avatars,
-push-to-talk + open-mic modes.
+Build the spatial UI to the **[Visual Design System](DESIGN.md)** — a "warm
+mission-control TUI": a character-cell grid, box-drawing cubicles, glyph-based
+presence, and the warm cream/charcoal + hero-orange palette. Sequenced *after*
+the headless Phases 2–3 (UI last). Follows the design plan's four build stages,
+each with its own benchmark gate:
+
+- **Stage 1 — Prove the core:** character-cell grid, light + dark token files
+  ([DESIGN.md §tokens](DESIGN.md)), JetBrains Mono at the type scale, floor view +
+  one **at-rest cubicle** with the 5 presence glyphs.
+  *Gate:* the floor reads clearly in **grayscale** and **16-color** before any
+  truecolor styling; box-drawing stays unbroken at `--lh-box` (≤1.2). If boxes
+  fragment, lower line-height before changing fonts.
+- **Stage 2 — Walk in:** expanded cubicle (Notebook / Tasks / Terminal / Talk),
+  terminal feed with blinking cursor + typewriter reveal, and the approval-gate
+  modal.
+  *Gate:* the approval gate is unmistakable in monochrome and passes AA; the voice
+  meter is legible.
+- **Stage 3 — Warmth & polish:** hover/focus + slow status motion, the opt-in
+  scanline toggle, the department rail + rounded bottom bar.
+  *Gate:* with motion on, the floor still feels **calm** (no continuous decorative
+  motion beyond cursor + slow pulses); `prefers-reduced-motion` fully neutralizes it.
+- **Stage 4 — v2 scaffolding (additive):** double-line room containers,
+  tee-joined wall boards, connector glyphs — *container styles only*.
+  *Gate:* a v1 cubicle dropped inside a v2 room needs **zero token changes**.
 
 > The desktop shell framework (Electron vs Tauri) is **deferred** — see
 > [DECISIONS.md ADR-005](DECISIONS.md). It must be chosen before this phase.
 
-**Exit-gate:** the full single-agent office experience.
+**Exit-gate:** the full single-agent office experience, built to
+[DESIGN.md](DESIGN.md) (Stages 1–3 complete; Stage 4 is v2 prep).
 
 ## Phase 5 — Hardening & release  (2 wks)
 

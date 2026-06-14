@@ -74,3 +74,43 @@ simpler fallback for the single-user local case.
 
 **Decide during Phase 2** based on the measured latency/quality trade-off on the
 reference machine.
+
+## ADR-007 — Visual north star: "warm mission-control TUI" · **Locked**
+
+The UI is a deliberate text-mode console — monospace type + box-drawing chrome
+(`┌─┐` cubicles, `╔═╗` rooms), glyph-based presence — **warmed** with a
+Headspace-inspired cream/charcoal palette and a hero orange so the terminal reads
+as calm and human, not cold. Full spec in [DESIGN.md](DESIGN.md).
+
+**Why:** a single, precisely-executed aesthetic is what separates premium TUI
+from amateur TUI; the warmth lever differentiates HedOffice while staying
+developer-native. The box-hierarchy grammar also makes the v1→v2 path additive
+(single→double→rounded borders already encode desk→room→shell).
+
+## ADR-008 — Typography & box-drawing line-height · **Locked (Berkeley Mono deferred)**
+
+**JetBrains Mono** (OFL) for body/UI/feed — the face documented to hold
+box-drawing crisp up to 120% line-height (decisive, since the whole layout is box
+characters); use the **NL** non-ligature variant in the terminal feed.
+**Geist Mono** (OFL) for display. Box-drawing elements cap line-height at **1.2**.
+
+**Berkeley Mono — DEFERRED:** premium and tempting, but its license restricts
+terminal/IDE-style *products*. Do **not** adopt until the use is explicitly
+cleared with the foundry; default to Geist Mono for display.
+
+## ADR-009 — Presence = glyph + color (+ motion), never color alone · **Locked**
+
+The 5 presence states render as distinct glyphs (`◉ ◐ ○ ▓ ·`) plus color plus
+optional motion, so they are unambiguous in monochrome, in color, and to
+color-blind users (`running` green vs `blocked` red are never separated by hue
+alone). Reinforces ADR-003 (presence inferred, not self-reported) and binds the UI
+glyphs to the `PresenceStatus` enum.
+
+## ADR-010 — Theme tokens: 3-tier, `[data-theme]`, OKLCH-authored · **Locked**
+
+Design tokens are **primitives → semantic (alias) → component** CSS custom
+properties; components reference semantics only, and light/dark switch as
+`[data-theme]` overrides on the semantic layer (one-layer theme flip). Author
+colors in **OKLCH** for predictable cross-theme contrast, shipping sRGB hex
+fallbacks. Inner boxes keep `radius:0` (honor the grid); only outer friendly
+shells take `--radius-chrome`. See [DESIGN.md §tokens](DESIGN.md).

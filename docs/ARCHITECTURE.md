@@ -164,6 +164,26 @@ in 2–5 s; longer indicates an unhealthy/blocked agent). Each transition emits 
 `presence.changed` event the UI subscribes to. Expose **"last activity Xs ago"**
 alongside the discrete badge so the user has ground truth.
 
+### State ↔ glyph mapping (5 states)
+
+The five states are the `PresenceStatus` enum in
+`packages/schema/src/primitives.ts`; the UI renders each as a distinct glyph +
+color + optional motion ([DESIGN.md §presence](DESIGN.md), ADR-009):
+
+| State | Glyph | Inferred from |
+|---|---|---|
+| `running` | `◉` | tool call in-flight |
+| `thinking` | `◐` | user utterance awaiting `channel.say`, or reasoning/streaming |
+| `idle` | `○` | connected, no in-flight calls |
+| `blocked` | `▓` | elicitation / approval pending |
+| `offline` | `·` | `ping` fails / `transport.onclose` |
+
+**Implementation status:** `PresenceEngine` (`packages/core/src/presence.ts`)
+infers `offline`/`idle`/`running` today; `thinking` and `blocked` are wired in
+**Phase 3**, when the voice channel and approval gate provide the signals. The
+schema enum already includes all five, so this is purely added inference rules,
+not a schema change.
+
 ## How a BYO agent connects (openclaw/Hermes-style)
 
 The external agent adds HedOffice as a Streamable HTTP MCP server with a bearer
