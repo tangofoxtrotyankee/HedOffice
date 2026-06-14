@@ -65,6 +65,7 @@ multi-agent layer is mostly routing pre-existing events**, not a re-architecture
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — architecture decision records (locked + open)
 - [`docs/DEV_SETUP.md`](docs/DEV_SETUP.md) — toolchain, commands, and the headless proofs
 - [`docs/TESTING.md`](docs/TESTING.md) — manual / on-device QA checklist (what CI can't verify)
+- [`docs/DEPLOY.md`](docs/DEPLOY.md) — optional cloud deploy of the headless MCP server (Railway)
 
 ## License
 
