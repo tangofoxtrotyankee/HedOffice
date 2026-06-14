@@ -24,6 +24,12 @@ export interface HedOfficeServerOptions {
   allowedOrigins?: string[];
   /** Override the allowed Host list. Defaults to the bound 127.0.0.1:<port>. */
   allowedHosts?: string[];
+  /**
+   * DNS-rebinding protection (localhost defense). Default `true` for local use;
+   * set `false` for a cloud deploy behind a proxy, where the public Host header
+   * would otherwise be rejected and protection relies on bearer tokens instead.
+   */
+  enableDnsRebindingProtection?: boolean;
 }
 
 function jsonRpcError(code: number, message: string) {
@@ -51,6 +57,13 @@ export class HedOfficeServer {
     this.app.post("/mcp", (req, res) => void this.handlePost(req, res));
     this.app.get("/mcp", (req, res) => void this.handleSessionRequest(req, res));
     this.app.delete("/mcp", (req, res) => void this.handleSessionRequest(req, res));
+    // Liveness + a tiny landing payload (used by cloud health checks).
+    this.app.get("/healthz", (_req, res) => {
+      res.json({ ok: true, sessions: this.sessions.size });
+    });
+    this.app.get("/", (_req, res) => {
+      res.json({ name: "hedoffice", status: "ok", mcp: "/mcp" });
+    });
   }
 
   get sessionCount(): number {
@@ -98,7 +111,7 @@ export class HedOfficeServer {
 
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
-      enableDnsRebindingProtection: true,
+      enableDnsRebindingProtection: this.opts.enableDnsRebindingProtection ?? true,
       allowedHosts: this.allowedHosts(),
       allowedOrigins: this.opts.allowedOrigins,
       onsessioninitialized: (newSid) => {
@@ -133,10 +146,13 @@ export class HedOfficeServer {
     return this.boundHost ? [this.boundHost, this.boundHost.replace("127.0.0.1", "localhost")] : undefined;
   }
 
-  /** Bind to a port (0 = ephemeral). Resolves with the actual port. */
-  listen(port = 0): Promise<number> {
+  /**
+   * Bind to a port (0 = ephemeral) and host (default loopback). Resolves with the
+   * actual port. Use `0.0.0.0` for a cloud deploy.
+   */
+  listen(port = 0, host = "127.0.0.1"): Promise<number> {
     return new Promise((resolve) => {
-      this.httpServer = this.app.listen(port, "127.0.0.1", () => {
+      this.httpServer = this.app.listen(port, host, () => {
         const addr = this.httpServer!.address() as AddressInfo;
         this.boundHost = `127.0.0.1:${addr.port}`;
         resolve(addr.port);

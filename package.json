@@ -12,7 +12,8 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "check": "pnpm -r build && pnpm -r typecheck && pnpm -r test"
+    "check": "pnpm -r build && pnpm -r typecheck && pnpm -r test",
+    "start": "pnpm --filter @hedoffice/server start"
   },
   "devDependencies": {
     "typescript": "^5.6.3"
