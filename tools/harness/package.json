@@ -7,14 +7,16 @@
   "private": true,
   "scripts": {
     "multi-client": "tsx src/multi-client.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "voice-loop": "tsx src/voice-loop.ts"
   },
   "dependencies": {
     "@hedoffice/core": "workspace:*",
     "@hedoffice/event-store": "workspace:*",
     "@hedoffice/mcp-server": "workspace:*",
     "@hedoffice/schema": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.12.0"
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@hedoffice/audio": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
