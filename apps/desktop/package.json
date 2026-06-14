@@ -1,29 +1,36 @@
 {
   "name": "@hedoffice/desktop",
   "version": "0.0.0",
-  "description": "The 'warm mission-control TUI' office UI (React)",
+  "description": "The 'warm mission-control TUI' office UI (React) + Electron shell",
   "license": "MIT",
   "type": "module",
   "private": true,
+  "main": "electron/main.ts",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p electron/tsconfig.json",
     "test": "vitest run",
     "preview-floor": "tsx src/preview.ts",
     "preview-walkin": "tsx src/preview-expanded.ts",
-    "preview-rooms": "tsx src/preview-rooms.ts"
+    "preview-rooms": "tsx src/preview-rooms.ts",
+    "electron:dev": "echo 'Run the Vite renderer (pnpm dev) then launch Electron against electron/main.ts via electron-vite/tsx — see README' ",
+    "electron:build": "echo 'Package installers with electron-builder (electron-builder.yml) — see README'"
   },
   "dependencies": {
-    "@hedoffice/schema": "workspace:*",
     "@fontsource/jetbrains-mono": "^5.1.0",
+    "@hedoffice/core": "workspace:*",
+    "@hedoffice/mcp-server": "workspace:*",
+    "@hedoffice/schema": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
+    "electron": "^33.4.11",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "vite": "^5.4.10",

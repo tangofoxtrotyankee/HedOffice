@@ -1,0 +1,18 @@
+# electron-builder config (Phase 5 packaging). Run with `npx electron-builder`
+# after building the renderer (`pnpm build`) and compiling electron/ to dist-electron.
+# Not run in CI (no display / signing). See README.
+appId: cleaning.timeforyou.hedoffice
+productName: HedOffice
+directories:
+  output: release
+files:
+  - dist/**
+  - dist-electron/**
+mac:
+  category: public.app-category.productivity
+  target: [dmg]
+win:
+  target: [nsis]
+linux:
+  target: [AppImage]
+  category: Utility

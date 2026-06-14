@@ -47,5 +47,23 @@ pnpm --filter @hedoffice/desktop test            # geometry + panel + room tests
 pnpm --filter @hedoffice/desktop build           # production bundle
 ```
 
-Next: the desktop shell (Electron vs Tauri — ADR-005) + packaging at Phase 5,
-and wiring the floor to live event-log data (replacing the sample data).
+## Electron shell (ADR-005 — Electron)
+
+The main process (`electron/`) runs `@hedoffice/core` + the MCP server and exposes
+the read-models to the renderer over a typed IPC contract; the renderer stays
+sandboxed (`contextIsolation`, no `nodeIntegration`) and imports only pure view
+types. Secrets sit behind a `SecretStore` — `ElectronSecretStore` (`safeStorage`)
+in prod, `InMemorySecretStore` in dev/tests.
+
+- `src/shell/ipc-contract.ts` — the IPC channels + `window.hedoffice` API (browser-safe).
+- `electron/handlers.ts` — IPC handlers over an `Office` (unit-tested headlessly).
+- `electron/secrets.ts` / `secrets-electron.ts` — secret storage.
+- `electron/main.ts` / `preload.ts` — Electron glue (typechecked; launched via
+  `electron:dev`, not CI). Packaging: `electron-builder.yml` + `npx electron-builder`.
+
+> Electron can be typechecked + the main-process logic unit-tested here, but it
+> can't be launched headlessly (no display). The renderer (`pnpm dev`) and the
+> previews run anywhere.
+
+Next: surface live `channel.*`/approval events to the renderer over IPC (the
+approval modal → real gate), and the on-device audio engines.

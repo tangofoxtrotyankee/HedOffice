@@ -41,8 +41,13 @@ Manager/DPAPI, Linux libsecret). In a desktop shell, prefer the built-in
 trusted main process. **Never** write keys to config files or the event log.
 Decrypt on demand; hold in memory only as needed.
 
-> Secret storage is accessed behind an interface so headless Phases 0–3 don't
-> depend on a shell. See [DECISIONS.md ADR-005](DECISIONS.md).
+> Secret storage is accessed behind a `SecretStore` interface
+> (`apps/desktop/electron/secrets.ts`) so headless Phases 0–3 don't depend on a
+> shell. **Implemented:** `ElectronSecretStore` encrypts each secret with
+> `safeStorage` (OS keychain) and persists base64 to a `0600` userData file,
+> accessed only from the main process; it refuses to store a secret if OS
+> encryption is unavailable (no plaintext fallback). `InMemorySecretStore` backs
+> headless dev/tests. See [DECISIONS.md ADR-005](DECISIONS.md).
 
 ## Agent authn / authz
 

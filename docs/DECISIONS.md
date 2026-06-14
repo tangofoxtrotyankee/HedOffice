@@ -52,18 +52,24 @@ process; simplest path for an event-sourced local app. **Pin SDK versions** and
 isolate transport/auth behind adapters — the next spec RC (2026-07-28) and a v2
 SDK are announced, not shipped.
 
-## ADR-005 — Desktop shell (Electron vs Tauri) · **DEFERRED**
+## ADR-005 — Desktop shell: **Electron** · **Locked**
 
-The shell framework is **not chosen yet**. Lean **Electron** for v1
-(`safeStorage`, mature native-module support, simplest path to bundle SQLite +
-audio addons), accepting the larger bundle (~150–300 MB RAM / 100 MB+ installer
-vs Tauri's ~30–50 MB / sub-10 MB). Tauri is the lighter alternative but adds
-native-module/WebView friction.
+The shell is **Electron**. It wins on `safeStorage` (OS-keychain secrets with no
+native-module build pain), mature native-module support for bundling the
+`better-sqlite3` and (later) sherpa-onnx addons in the main process, and the
+simplest path to wire the existing Node core to a renderer. We accept the larger
+footprint (~150–300 MB RAM / 100 MB+ installer) over Tauri's lighter bundle
+because the native-module + `safeStorage` maturity matters more for v1; a Tauri
+slimming pass can be revisited later.
 
-**Constraint:** headless Phases 0–3 **must not depend on shell APIs.** Isolate
-secret storage behind an interface (a plain Node keychain impl for headless dev;
-the shell's `safeStorage` impl wired in at Phase 4). **Revisit and decide before
-Phase 4.**
+**As built (`apps/desktop/electron/`):** the main process runs `@hedoffice/core`
++ the MCP server and exposes the read-models to the renderer over a typed IPC
+contract (`src/shell/ipc-contract.ts`); the renderer stays sandboxed
+(`contextIsolation`, no `nodeIntegration`) and imports only pure view types.
+Secrets sit behind a `SecretStore` interface — `ElectronSecretStore`
+(`safeStorage` + an encrypted userData file) in production, `InMemorySecretStore`
+for headless dev/tests. The headless Phases 0–3 took no shell dependency, as
+required.
 
 ## ADR-006 — Local audio transport (WebRTC vs WebSocket) · **Open until Phase 2**
 
