@@ -1,0 +1,86 @@
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; }
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums lining-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-6);
+  gap: var(--space-6);
+}
+
+/* The grayscale benchmark: status must remain legible by glyph alone. */
+.app.grayscale { filter: grayscale(1); }
+
+/* ---- floor ---- */
+.floor { flex: 1; }
+
+.floor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: var(--border-thickness) solid var(--border-hairline);
+  margin-bottom: var(--space-6);
+}
+.floor-title { font-size: var(--fs-h1); letter-spacing: 0.02em; }
+.floor-counts { display: inline-flex; gap: var(--space-4); color: var(--text-secondary); }
+.count { white-space: pre; }
+
+.floor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(0, max-content));
+  gap: var(--space-6);
+  align-content: start;
+}
+
+/* ---- cubicle card (box-drawing on the cell grid) ---- */
+.cubicle {
+  margin: 0;
+  font-family: var(--font-mono);
+  line-height: var(--lh-box);            /* cap ≤1.2 so box strokes touch */
+  color: var(--text-primary);
+  background: var(--cubicle-bg);
+  white-space: pre;
+  cursor: default;
+  transition: background var(--motion-hover) var(--ease-standard);
+}
+.cubicle-line { white-space: pre; }
+.cubicle:hover { background: var(--bg-surface-raised); }
+
+/* ---- control bar (rounded "Headspace" chrome) ---- */
+.control-bar {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface);
+  border: var(--border-thickness) solid var(--border-hairline);
+  border-radius: var(--radius-chrome);
+}
+.btn {
+  font-family: var(--font-mono);
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+  background: transparent;
+  border: var(--border-thickness) solid var(--border-hairline);
+  border-radius: var(--radius-chrome);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  white-space: pre;
+  transition: border-color var(--motion-hover) var(--ease-standard);
+}
+.btn:hover { border-color: var(--border-strong); }
+.btn:focus-visible { outline: var(--border-thickness) solid var(--accent-hero); outline-offset: 2px; }

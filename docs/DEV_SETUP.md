@@ -52,13 +52,14 @@ Run the headless proofs:
 pnpm --filter @hedoffice/harness multi-client      # Phase 1: N isolated agents + presence
 pnpm --filter @hedoffice/harness voice-loop        # Phase 2: echo-agent voice loop + barge-in
 pnpm --filter @hedoffice/harness integration       # Phase 3: voice ↔ MCP ↔ approval gate
+pnpm --filter @hedoffice/desktop preview-floor     # Phase 4 Stage 1: floor view as text
+pnpm --filter @hedoffice/desktop dev               # …or the live UI (Vite, 127.0.0.1:4318)
 ```
 
 ## Next increment
 
-Phase 4 (Office UX): build the React "warm mission-control TUI" to
-[DESIGN.md](DESIGN.md) — character-cell grid, box-drawing cubicles, the 5
-presence glyphs, light/dark tokens — starting with Stage 1 (floor + at-rest
-cubicle). In parallel, the on-device audio work (real sherpa-onnx/ElevenLabs
-providers + measured latency) lands the real engines behind the Phase 2
-interfaces. See [ROADMAP.md](ROADMAP.md).
+Phase 4 **Stage 2** (walk in): the expanded cubicle (Notebook / Tasks / Terminal /
+Talk), the terminal feed with blinking cursor + typewriter reveal, and the
+approval-gate modal. In parallel, the on-device audio work (real
+sherpa-onnx/ElevenLabs providers + measured latency) lands the real engines
+behind the Phase 2 interfaces. See [ROADMAP.md](ROADMAP.md).

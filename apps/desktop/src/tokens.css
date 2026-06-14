@@ -1,0 +1,74 @@
+/* HedOffice design tokens — primitives -> semantic ([data-theme]) -> component.
+ * Mirrors docs/DESIGN.md §I (ADR-010). Components reference semantic/component
+ * tokens only, never primitives. */
+:root {
+  /* ---------- PRIMITIVES (raw scales; never used directly in components) ---------- */
+  --cream-50:#FBF3E6; --cream-100:#F4E9D4; --cream-200:#EFE0C6; --cream-300:#E2D2B4;
+  --char-900:#161310; --char-800:#1F1B17; --char-700:#272219; --char-600:#322A1F; --char-500:#3A3127;
+  --ink-900:#2C2620; --ink-700:#5A4F42; --ink-500:#766A59;
+  --paper-100:#F3E7D2; --paper-300:#CDBBA0; --paper-500:#9A8B74;
+  --orange-700:#B8480E; --orange-600:#E8631A; --orange-500:#F5832F;
+  --green-600:#2E7D5B; --green-400:#5FB98C;
+  --amber-600:#C77A12; --amber-400:#E8B23E;
+  --slate-500:#6E8BA3; --slate-300:#8FB3CE;
+  --coral-600:#C0461F; --coral-400:#F0795A;
+  --sky-600:#2F6E8F;  --sky-400:#6FB3D6;
+
+  /* ---------- SPACE ---------- */
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-6:24px; --space-8:32px;
+  --cell-h:1.2em;
+
+  /* ---------- TYPE ---------- */
+  --font-mono:"JetBrains Mono","JetBrains Mono NL",ui-monospace,monospace;
+  --font-display:"Geist Mono",var(--font-mono);
+  --fs-display:32px; --fs-h1:24px; --fs-h2:18px; --fs-body:16px;
+  --fs-ui:14px; --fs-feed:13px; --fs-meta:12px;
+  --lh-box:1.15; --lh-tight:1.3; --lh-prose:1.5;
+  --fw-regular:400; --fw-medium:500; --fw-bold:700;
+
+  /* ---------- BORDER / BOX-STYLE ---------- */
+  --border-thickness:1.5px;
+  --radius-chrome:8px;     /* outer rounded shells/bars/modals only */
+  --radius-default:0;      /* inner boxes stay square to honor the grid */
+
+  /* ---------- MOTION ---------- */
+  --motion-cursor:1s; --motion-status-slow:2s; --motion-typewriter:220ms;
+  --motion-hover:120ms; --ease-standard:cubic-bezier(.2,.0,.2,1);
+}
+
+/* ---------- SEMANTIC (alias) — LIGHT (default) ---------- */
+:root, [data-theme="light"] {
+  --bg-base:var(--cream-50); --bg-surface:var(--cream-100);
+  --bg-surface-raised:var(--cream-200); --bg-inset:#33291F;
+  --border-hairline:var(--cream-300); --border-strong:#A8754A;
+  --text-primary:var(--ink-900); --text-secondary:var(--ink-700); --text-muted:var(--ink-500);
+  --accent-hero:var(--orange-600); --accent-hero-ink:var(--orange-700); --accent-hero-on:#FFFFFF;
+  --status-running:var(--green-600);  --status-thinking:var(--amber-600);
+  --status-idle:var(--slate-500);     --status-blocked:var(--coral-600); --status-offline:var(--ink-500);
+  --feedback-success:var(--green-600);--feedback-warn:var(--amber-600);
+  --feedback-error:var(--coral-600);  --feedback-info:var(--sky-600);
+}
+/* ---------- SEMANTIC (alias) — DARK ---------- */
+[data-theme="dark"] {
+  --bg-base:var(--char-800); --bg-surface:var(--char-700);
+  --bg-surface-raised:var(--char-600); --bg-inset:var(--char-900);
+  --border-hairline:var(--char-500); --border-strong:#C98A4E;
+  --text-primary:var(--paper-100); --text-secondary:var(--paper-300); --text-muted:var(--paper-500);
+  --accent-hero:var(--orange-500); --accent-hero-ink:var(--orange-500); --accent-hero-on:#201A14;
+  --status-running:var(--green-400);  --status-thinking:var(--amber-400);
+  --status-idle:var(--slate-300);     --status-blocked:var(--coral-400); --status-offline:var(--paper-500);
+  --feedback-success:var(--green-400);--feedback-warn:var(--amber-400);
+  --feedback-error:var(--coral-400);  --feedback-info:var(--sky-400);
+}
+
+/* ---------- COMPONENT (reference semantic only) ---------- */
+:root {
+  --cubicle-bg:var(--bg-surface); --cubicle-border:var(--border-hairline);
+  --cubicle-border-focus:var(--border-strong);
+  --feed-bg:var(--bg-inset); --feed-cursor:var(--accent-hero);
+  --btn-primary-bg:var(--accent-hero); --btn-primary-fg:var(--accent-hero-on);
+  --rail-active:var(--accent-hero); --gate-border:var(--feedback-error);
+}
+@media (prefers-reduced-motion:reduce) {
+  :root { --motion-cursor:0s; --motion-status-slow:0s; --motion-typewriter:0s; }
+}
