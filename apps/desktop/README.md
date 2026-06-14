@@ -21,7 +21,7 @@ Phase 4 follows the design plan's four build stages (see
 > [docs/DECISIONS.md ADR-005](../../docs/DECISIONS.md). Stages 1–3 run in the
 > browser via Vite and use no shell APIs; the shell wraps this later.
 
-## Status: **Stages 1–2 — done**
+## Status: **Stages 1–3 — done**
 
 - **Stage 1** — floor view with at-rest cubicles + the 5 presence glyphs,
   light/dark tokens (`tokens.css`), JetBrains Mono. Cubicle geometry is pure
@@ -30,6 +30,10 @@ Phase 4 follows the design plan's four build stages (see
   Terminal / Talk) in a heavy-bordered rounded modal; terminal feed (dark inset,
   colored verb glyphs, blinking cursor + typewriter); talk meter; and the
   **approval-gate modal** (`ApprovalModal`). Panel formatting is pure (`panel.ts`).
+- **Stage 3** — warmth & polish: slow per-state status motion (`rail.ts`
+  `PRESENCE_MOTION`), the numbered department rail (`DepartmentRail`, filters the
+  floor), the rounded bottom control bar with invert-on-active toggle chips, and
+  an opt-in scanline overlay. All motion respects `prefers-reduced-motion`.
 
 ```sh
 pnpm --filter @hedoffice/desktop dev             # Vite dev server (127.0.0.1:4318)
@@ -39,5 +43,5 @@ pnpm --filter @hedoffice/desktop test            # geometry + panel tests
 pnpm --filter @hedoffice/desktop build           # production bundle
 ```
 
-Next: Stage 3 (warmth & polish — status motion, scanline toggle, department rail +
-bottom bar).
+Next: Stage 4 (v2 scaffolding — double-line room containers, tee-joined wall
+boards, connector glyphs — additive container styles only).

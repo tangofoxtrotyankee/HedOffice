@@ -188,6 +188,80 @@ body {
 .btn-approve:hover { border-color: var(--feedback-success); }
 .btn-deny:hover { border-color: var(--feedback-error); }
 
+/* ---- stage: department rail + floor ---- */
+.stage { flex: 1; display: flex; gap: var(--space-6); align-items: flex-start; }
+
+.rail {
+  flex: 0 0 auto;
+  min-width: 11rem;
+  display: flex; flex-direction: column;
+  border-right: var(--border-thickness) solid var(--border-hairline);
+  padding-right: var(--space-3);
+}
+.rail-head {
+  font-size: var(--fs-meta); color: var(--text-secondary);
+  letter-spacing: 0.08em; padding: var(--space-2) var(--space-2) var(--space-3);
+}
+.rail-row {
+  display: grid;
+  grid-template-columns: 1ch 1.5ch 1fr auto;
+  gap: var(--space-2);
+  align-items: center;
+  font-family: var(--font-mono); font-size: var(--fs-ui);
+  color: var(--text-primary);
+  background: transparent; border: 0;
+  padding: var(--space-1) var(--space-2);
+  text-align: left; cursor: pointer; white-space: pre;
+}
+.rail-row:hover { background: var(--bg-surface); }
+.rail-row-active { color: var(--rail-active); font-weight: var(--fw-bold); }
+.rail-tick { color: var(--rail-active); }
+.rail-n { color: var(--text-muted); }
+.rail-add { color: var(--text-muted); margin-top: var(--space-2); }
+
+/* ---- bottom control bar chips ---- */
+.control-bar { align-items: center; }
+.control-spacer { flex: 1; }
+.chip {
+  font-family: var(--font-mono); font-size: var(--fs-ui); font-weight: var(--fw-medium);
+  color: var(--text-primary);
+  background: transparent;
+  border: var(--border-thickness) solid var(--border-hairline);
+  border-radius: var(--radius-chrome);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer; white-space: pre;
+  transition: border-color var(--motion-hover) var(--ease-standard),
+              background var(--motion-hover) var(--ease-standard);
+}
+.chip:hover { border-color: var(--border-strong); }
+.chip:focus-visible { outline: var(--border-thickness) solid var(--accent-hero); outline-offset: 2px; }
+/* active toggles invert to a filled hero chip */
+.chip-active {
+  background: var(--accent-hero);
+  color: var(--accent-hero-on);
+  border-color: var(--accent-hero);
+}
+
+/* ---- slow status motion (calm; ≥1.5–2s) ---- */
+.glyph { display: inline-block; }
+.glyph-pulse { animation: gpulse var(--motion-status-slow) ease-in-out infinite; }
+@keyframes gpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+.glyph-spin { animation: gspin calc(var(--motion-status-slow) * 1.5) linear infinite; }
+@keyframes gspin { to { transform: rotate(360deg); } }
+.glyph-attention { animation: gattn var(--motion-status-slow) ease-out infinite; }
+@keyframes gattn { 0% { opacity: 1; } 8% { opacity: 0.25; } 16% { opacity: 1; } 100% { opacity: 1; } }
+
+/* ---- opt-in scanline / CRT overlay (off by default; must not drop contrast) ---- */
+.app.scanlines::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 5;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.035) 0, rgba(0, 0, 0, 0.035) 1px,
+    transparent 1px, transparent 3px
+  );
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .cursor, .typewriter, .expanded, .approval { animation: none; }
+  .cursor, .typewriter, .expanded, .approval,
+  .glyph-pulse, .glyph-spin, .glyph-attention { animation: none; }
 }

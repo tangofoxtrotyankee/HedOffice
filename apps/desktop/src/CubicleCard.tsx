@@ -1,15 +1,16 @@
 import type { ReactNode } from "react";
 import { PRESENCE } from "./presence";
+import { PRESENCE_MOTION } from "./rail";
 import { cubicleLines, type CubicleData } from "./cubicle";
 
-/** Wrap each occurrence of `glyph` in `line` with a colored span. */
-function colorizeGlyph(line: string, glyph: string, colorVar: string): ReactNode[] {
+/** Wrap each occurrence of `glyph` in `line` with a colored, optionally animated span. */
+function colorizeGlyph(line: string, glyph: string, colorVar: string, motion = ""): ReactNode[] {
   const parts = line.split(glyph);
   const nodes: ReactNode[] = [];
   parts.forEach((part, i) => {
     if (i > 0) {
       nodes.push(
-        <span key={`g${i}`} style={{ color: `var(${colorVar})` }}>
+        <span key={`g${i}`} className={`glyph ${motion}`} style={{ color: `var(${colorVar})` }}>
           {glyph}
         </span>,
       );
@@ -34,6 +35,7 @@ export function CubicleCard({
 }): ReactNode {
   const lines = cubicleLines(cubicle);
   const meta = cubicle.empty ? PRESENCE.offline : PRESENCE[cubicle.status];
+  const motion = cubicle.empty ? "" : PRESENCE_MOTION[cubicle.status];
   const interactive = !cubicle.empty && onSelect;
   return (
     <pre
@@ -55,7 +57,7 @@ export function CubicleCard({
     >
       {lines.map((line, i) => (
         <div className="cubicle-line" key={i}>
-          {i <= 1 ? colorizeGlyph(line, meta.glyph, meta.colorVar) : line}
+          {i <= 1 ? colorizeGlyph(line, meta.glyph, meta.colorVar, motion) : line}
         </div>
       ))}
     </pre>
