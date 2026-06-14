@@ -261,6 +261,26 @@ body {
   );
 }
 
+/* ---- v2 rooms (additive containers) ---- */
+.rooms { display: flex; flex-direction: column; gap: var(--space-6); }
+.rooms-note { color: var(--text-muted); font-size: var(--fs-meta); }
+.room {
+  padding: var(--space-4);
+  background: var(--bg-surface);
+}
+.room-double { border: 4px double var(--border-strong); }   /* department room */
+.room-rounded { border: var(--border-thickness) solid var(--border-hairline); border-radius: var(--radius-chrome); }
+.room-title { font-size: var(--fs-h2); color: var(--accent-hero-ink); margin-bottom: var(--space-3); }
+.wall-board {
+  display: inline-block;
+  font-size: var(--fs-meta); color: var(--text-secondary);
+  border: var(--border-thickness) solid var(--border-hairline);
+  padding: 0 var(--space-2); margin-bottom: var(--space-4);
+}
+.room-body { display: flex; flex-wrap: wrap; gap: var(--space-6); align-items: center; }
+.room-cell { display: inline-flex; align-items: center; gap: var(--space-3); }
+.connector { color: var(--text-muted); }
+
 @media (prefers-reduced-motion: reduce) {
   .cursor, .typewriter, .expanded, .approval,
   .glyph-pulse, .glyph-spin, .glyph-attention { animation: none; }

@@ -125,9 +125,17 @@ each with its own benchmark gate:
   **bottom control bar** with invert-on-active toggle chips.
   *Gate met:* the only continuous motion is the feed cursor + slow status glyphs
   (calm); `prefers-reduced-motion` removes all of it. 3 rail/motion tests.
-- **Stage 4 — v2 scaffolding (additive):** double-line room containers,
-  tee-joined wall boards, connector glyphs — *container styles only*.
-  *Gate:* a v1 cubicle dropped inside a v2 room needs **zero token changes**.
+- **Stage 4 — v2 scaffolding (additive):** ✅ double-line `╔═╗` department rooms
+  and rounded `╭─╮` informal rooms (`Room`), tee-joined wall boards
+  (`╠═ board ═╣`), and agent-to-agent connector glyphs (`├─▶`, `╪`) — container
+  styles only (`room.ts`), toggled in the UI.
+  *Gate met:* the v2 preview composes the **unchanged** v1 `CubicleCard` inside v2
+  rooms (`pnpm --filter @hedoffice/desktop preview-rooms`) — zero token/cubicle
+  changes. 4 room tests.
+
+**Phase 4 exit-gate:** ✅ the full single-agent office experience — floor, walk-in,
+warmth/motion, and the v2-ready container grammar — all to the Visual Design
+System. Runs in the browser via Vite; the shell wraps it at Phase 5.
 
 > The desktop shell framework (Electron vs Tauri) is **deferred** — see
 > [DECISIONS.md ADR-005](DECISIONS.md). Stages 1–3 run in the browser via Vite

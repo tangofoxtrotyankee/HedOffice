@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Floor } from "./Floor";
 import { ExpandedCubicle } from "./ExpandedCubicle";
 import { DepartmentRail } from "./DepartmentRail";
+import { RoomsPreview } from "./RoomsPreview";
 import { ALL_DEPARTMENTS } from "./rail";
 import { SAMPLE_FLOOR } from "./sample";
 import type { CubicleData } from "./cubicle";
@@ -35,6 +36,7 @@ export function App(): ReactNode {
   const [grayscale, setGrayscale] = useState(false);
   const [scanlines, setScanlines] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [rooms, setRooms] = useState(false);
   const [dept, setDept] = useState<string>(ALL_DEPARTMENTS);
   const [walkedInto, setWalkedInto] = useState<CubicleData | null>(null);
 
@@ -49,7 +51,11 @@ export function App(): ReactNode {
     <div className={`app${grayscale ? " grayscale" : ""}${scanlines ? " scanlines" : ""}`}>
       <main className="stage">
         <DepartmentRail cubicles={SAMPLE_FLOOR} selected={dept} onSelect={setDept} />
-        <Floor cubicles={cubicles} onSelect={setWalkedInto} />
+        {rooms ? (
+          <RoomsPreview onSelect={setWalkedInto} />
+        ) : (
+          <Floor cubicles={cubicles} onSelect={setWalkedInto} />
+        )}
       </main>
 
       {walkedInto && (
@@ -63,6 +69,9 @@ export function App(): ReactNode {
           {muted ? "🔇 Muted" : "🔊 Mute"}
         </Chip>
         <Chip>⇲ Share</Chip>
+        <Chip active={rooms} onClick={() => setRooms((r) => !r)}>
+          ╔ Rooms (v2)
+        </Chip>
         <span className="control-spacer" />
         <Chip active={scanlines} onClick={() => setScanlines((s) => !s)}>
           ▒ Scanlines
