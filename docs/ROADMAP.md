@@ -150,7 +150,18 @@ System. Runs in the browser via Vite; the shell wraps it at Phase 5.
 Threat-model pass, secret-storage audit, tool-permission gates, packaging
 (installers), docs, GitHub open-source release.
 
-**Exit-gate:** v1.0.
+- [x] **Desktop shell — Electron** (ADR-005 locked): main process runs core + MCP
+  server, exposes read-models to a sandboxed renderer over a typed IPC contract;
+  `electron:dev` launch path. (`apps/desktop/electron/`)
+- [x] **Secret storage:** `SecretStore` interface + `ElectronSecretStore`
+  (`safeStorage`, encrypted userData file, no plaintext fallback); main-process only.
+- [ ] Renderer ↔ live `channel.*`/approval IPC (approval modal → real gate)
+- [ ] On-device audio engines (sherpa-onnx/ElevenLabs) behind the Phase 2 interfaces
+- [ ] Threat-model pass + tool-permission policy UI
+- [ ] Packaging (`electron-builder`) + installers, docs, OSS release
+
+**Exit-gate:** v1.0. *(Electron packaging + on-device audio require a real
+desktop/display, so they're built here and verified on a developer machine.)*
 
 ---
 

@@ -2,13 +2,15 @@
 
 A virtual workplace for your AI Agents.
 
-> **Status:** pre-alpha · **Phases 0–4 complete (headless + UI)** — the MCP-server
-> core (isolated cubicles + 5-state presence), the voice loop (STT/TTS/VAD
-> abstraction, barge-in, <800 ms budget), the integration spine (voice ↔
+> **Status:** pre-alpha · **Phases 0–4 complete; Phase 5 underway** — the
+> MCP-server core (isolated cubicles + 5-state presence), the voice loop (STT/TTS/
+> VAD abstraction, barge-in, <800 ms budget), the integration spine (voice ↔
 > `channel.*` ↔ approval gate + audit), and the full "warm mission-control TUI"
-> (floor, walk-in, warmth/motion, v2-ready rooms) all work. Remaining: on-device
-> audio engines and **Phase 5** (hardening, the Electron/Tauri shell, packaging,
-> release). Proofs: `pnpm --filter @hedoffice/harness multi-client` /
+> (floor, walk-in, warmth/motion, v2-ready rooms) all work, now rendered from live
+> event-log data and wrapped in an **Electron shell** (ADR-005) with
+> `safeStorage`-backed secrets. Remaining: on-device audio engines + Phase 5
+> finish (threat model, packaging, release). Proofs:
+> `pnpm --filter @hedoffice/harness multi-client` /
 > `… voice-loop` / `… integration`, and
 > `pnpm --filter @hedoffice/desktop preview-floor` / `… preview-walkin` /
 > `… preview-rooms` (or `dev` for the live UI). See

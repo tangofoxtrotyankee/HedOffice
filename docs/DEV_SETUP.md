@@ -61,14 +61,14 @@ pnpm --filter @hedoffice/desktop dev               # …or the live UI (Vite, 12
 
 ## Next increment
 
-Phases 0–4 are complete, and the **live-data contract** is in place: core's
-`buildFloorView` / `buildCubicleDetail` render the floor from the event log, and
-the UI consumes it through a `DataSource` seam (`apps/desktop/src/datasource.ts`).
-What remains:
-- **Desktop shell (Electron — ADR-005):** run `@hedoffice/core` + the MCP server
-  in the main process, hand `CubicleView[]` to the renderer over IPC (the
-  `liveDataSource`), and back secrets with `safeStorage`.
+Phases 0–4 are complete, live data renders from the event log, and the **Electron
+shell** (ADR-005) is scaffolded: the main process (`apps/desktop/electron/`) runs
+core + the MCP server and feeds the sandboxed renderer over a typed IPC contract,
+with `safeStorage`-backed secrets. What remains:
+- **Renderer ↔ live events:** surface `channel.*` + approval requests to the
+  renderer over IPC so the approval modal drives the real gate.
 - **On-device audio:** implement `LocalStt/TtsProvider` (sherpa-onnx) + the
   ElevenLabs provider behind the Phase 2 interfaces; measure real glass-to-glass.
-- **Phase 5 — hardening & release:** threat-model pass, secret-storage audit,
-  packaging/installers, and the OSS release. See [ROADMAP.md](ROADMAP.md).
+- **Phase 5 finish:** threat-model pass, packaging (`electron-builder`) +
+  installers, and the OSS release. (Electron/audio need a real desktop to launch
+  — built here, verified on a dev machine.) See [ROADMAP.md](ROADMAP.md).
