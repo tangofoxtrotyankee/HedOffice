@@ -10,13 +10,23 @@
 
 ## Intended toolchain
 
-- **Node.js** ≥ 20 LTS
+- **Node.js** — **20, 22 (LTS, recommended), or 24** all work. `.nvmrc` pins 22.
+  The only native module is **`better-sqlite3` (v12+)**, which ships prebuilt
+  binaries for each of those Node versions on Windows/macOS/Linux — so a normal
+  `pnpm install` needs **no C/C++ toolchain** (no Visual Studio Build Tools /
+  `node-gyp` source compile). pnpm runs its install script automatically via the
+  `onlyBuiltDependencies` allowlist in `pnpm-workspace.yaml`.
 - **pnpm** workspaces (monorepo)
 - **TypeScript** strict mode
 - **Zod** — schemas shared between MCP tool defs and the event log
-- **better-sqlite3** (WAL mode) — event store + projections
 - **@modelcontextprotocol/sdk** v1.x (pinned) — Streamable HTTP, stateful
-- **sherpa-onnx-node** — local STT/TTS/VAD (Phase 2)
+- **sherpa-onnx-node** — local STT/TTS/VAD (Phase 2; on-device)
+
+> **If `better-sqlite3` ever falls back to a source build** (an unusual
+> platform/arch with no published prebuild), install the platform build tools
+> (Windows: "Desktop development with C++" in VS Build Tools; macOS: Xcode CLT;
+> Linux: `build-essential` + `python3`). On supported targets this is never
+> needed. Keep Node within better-sqlite3's supported range (currently 20–26).
 
 ## Intended layout
 
