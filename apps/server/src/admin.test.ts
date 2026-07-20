@@ -87,6 +87,22 @@ describe("admin API (operator agent management)", () => {
     expect(booted!.office.agents.resolveToken(rotated.token)).toBeUndefined();
   });
 
+  it("accepts a ~1 MB charter (json body limit is raised above the 100 kb default)", async () => {
+    await boot();
+    const { agentId } = await admin("/admin/agents", {
+      method: "POST",
+      body: JSON.stringify({ name: "Lee." }),
+    }).then((r) => r.json());
+
+    const bigCharter = "# Lee.\n" + "governance line\n".repeat(65_000); // ~1 MB
+    const put = await admin(`/admin/agents/${agentId}/charter`, {
+      method: "PUT",
+      body: JSON.stringify({ content: bigCharter }),
+    });
+    expect(put.status).toBe(200);
+    expect(booted!.office.cubicles.charterRead(agentId)).toBe(bigCharter);
+  });
+
   it("does not expose /admin routes when no admin token is configured", async () => {
     booted = bootHedOffice(); // no adminToken
     port = await booted.server.listen(0);

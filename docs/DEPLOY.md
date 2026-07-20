@@ -28,15 +28,51 @@ The repo ships a `railway.json`:
 ```json
 {
   "build":  { "builder": "RAILPACK", "buildCommand": "pnpm --filter @hedoffice/server... build" },
-  "deploy": { "startCommand": "pnpm --filter @hedoffice/server start" }
+  "deploy": {
+    "startCommand": "pnpm --filter @hedoffice/server start",
+    "healthcheckPath": "/healthz",
+    "healthcheckTimeout": 60,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  }
 }
 ```
 
 This fixes the "no start command" build failure: Railpack installs the pnpm
 workspace (building the `better-sqlite3` native addon via `onlyBuiltDependencies`),
 the `buildCommand` compiles just the server + its workspace deps, and the
-`startCommand` runs `node dist/index.js`. Railway injects `PORT`. Then **expose
-the service** (a public domain) in the Railway UI.
+`startCommand` runs `node dist/index.js`. Railway injects `PORT`, gates each
+deploy on `/healthz`, and restarts on failure. Then **expose the service** (a
+public domain) in the Railway UI.
+
+### Setup runbook
+
+1. **Create the service** from this repo (Railway picks up `railway.json`).
+2. **Attach a volume** (Railway UI → service → Volumes), mounted at e.g.
+   `/data`, and set `HEDOFFICE_DB=/data/office.sqlite`. SQLite in WAL mode is
+   fine on a Railway volume. Without this, every restart/redeploy wipes all
+   agents, tokens, notebooks and history.
+3. **Set `HEDOFFICE_ADMIN_TOKEN`** to a long random secret (this is how you
+   register agents remotely — there is no shell on the container), and
+   `HEDOFFICE_DEMO_AGENT=0` for a real deployment.
+4. **Keep it at 1 replica** (Railway's default). MCP sessions live in the
+   server process and the store is a single SQLite file — multiple replicas
+   would split sessions across processes and break request routing. Scale
+   vertically if needed; multi-replica needs the v2 shared-session story.
+5. **Deploy**, then verify: `curl https://<app>.up.railway.app/healthz` →
+   `{ ok: true, … }`.
+6. **Register your agent** (see [INTEGRATION.md](INTEGRATION.md) for the full
+   playbook):
+   ```sh
+   curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: application/json" \
+     -d '{"name":"Lee.","stage":"observe"}' https://<app>.up.railway.app/admin/agents
+   ```
+7. **Run the link check from your machine** before connecting the real agent:
+   ```sh
+   pnpm --filter @hedoffice/harness hermes-link https://<app>.up.railway.app/mcp <agent-token>
+   ```
+   Expect `10/10 checks passed` (mutating tools report *denied — correct* while
+   the agent is at `observe` stage).
 
 Env vars:
 - `PORT` — provided by Railway.
