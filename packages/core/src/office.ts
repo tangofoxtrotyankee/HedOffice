@@ -4,7 +4,7 @@ import { ApprovalGate, type Approver } from "./approvals.js";
 import { ChannelService } from "./channel.js";
 import { CubicleState } from "./cubicle.js";
 import { PresenceEngine, type PresenceSnapshot } from "./presence.js";
-import type { ApprovalPolicy } from "@hedoffice/schema";
+import type { ApprovalPolicy, PermissionStage } from "@hedoffice/schema";
 
 export interface OfficeOptions {
   /** SQLite location; defaults to an in-memory store. */
@@ -36,11 +36,19 @@ export class Office {
     this.cubicles = new CubicleState(this.store);
     this.presence = new PresenceEngine(this.store, opts.onPresenceChange);
     this.channel = new ChannelService(this.store, this.presence);
-    this.approvals = new ApprovalGate(this.store, this.presence, opts.approval);
+    this.approvals = new ApprovalGate(this.store, this.presence, {
+      // The agent's staged-permission level drives the default gate policy
+      // (observe → deny, supervised → prompt, autonomous → auto) unless the
+      // caller pins an explicit defaultPolicy or per-tool override.
+      ...(opts.approval?.defaultPolicy === undefined && {
+        stageLookup: (agentId: string) => this.agents.stageOf(agentId),
+      }),
+      ...opts.approval,
+    });
   }
 
-  registerAgent(name: string) {
-    return this.agents.register(name);
+  registerAgent(name: string, stage?: PermissionStage) {
+    return this.agents.register(name, stage);
   }
 
   close(): void {

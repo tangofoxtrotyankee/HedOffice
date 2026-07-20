@@ -62,8 +62,9 @@ describe("event schema", () => {
 });
 
 describe("tool inputs", () => {
-  it("covers all nine v1 tools", () => {
-    expect(TOOL_NAMES).toHaveLength(9);
+  it("covers all ten v1 tools", () => {
+    expect(TOOL_NAMES).toHaveLength(10);
+    expect(TOOL_NAMES).toContain("cubicle.brief");
   });
 
   it("requires a non-empty task title", () => {

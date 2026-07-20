@@ -3,6 +3,7 @@ import {
   Actor,
   ApprovalDecision,
   Id,
+  PermissionStage,
   PresenceStatus,
 } from "./primitives.js";
 
@@ -19,12 +20,25 @@ import {
 export const AgentRegistered = z.object({ agentId: Id, name: z.string() });
 export const AgentConnected = z.object({ agentId: Id, sessionId: Id });
 export const AgentDisconnected = z.object({ agentId: Id, sessionId: Id });
+export const AgentRevoked = z.object({ agentId: Id, name: z.string() });
+export const AgentStageChanged = z.object({
+  agentId: Id,
+  from: PermissionStage,
+  to: PermissionStage,
+});
 
 export const PresenceChanged = z.object({
   agentId: Id,
   from: PresenceStatus,
   to: PresenceStatus,
   reason: z.string(),
+});
+
+/** The operator wrote/replaced a cubicle's charter (role + boundaries doc). */
+export const CharterWritten = z.object({
+  agentId: Id,
+  newHash: z.string(),
+  byteLen: z.number().int().nonnegative(),
 });
 
 export const NotebookWritten = z.object({
@@ -101,6 +115,9 @@ export const EventBody = z.discriminatedUnion("type", [
   z.object({ type: z.literal("agent.registered"), payload: AgentRegistered }),
   z.object({ type: z.literal("agent.connected"), payload: AgentConnected }),
   z.object({ type: z.literal("agent.disconnected"), payload: AgentDisconnected }),
+  z.object({ type: z.literal("agent.revoked"), payload: AgentRevoked }),
+  z.object({ type: z.literal("agent.stage_changed"), payload: AgentStageChanged }),
+  z.object({ type: z.literal("charter.written"), payload: CharterWritten }),
   z.object({ type: z.literal("presence.changed"), payload: PresenceChanged }),
   z.object({ type: z.literal("notebook.written"), payload: NotebookWritten }),
   z.object({ type: z.literal("task.created"), payload: TaskCreated }),

@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { setTimeout as sleep } from "node:timers/promises";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Office } from "@hedoffice/core";
-import { cubicleOf, MUTATING_TOOLS, sha256 } from "@hedoffice/core";
+import { cubicleOf, MUTATING_TOOLS, STAGE_POLICY, sha256 } from "@hedoffice/core";
 import {
   ChannelListenInput,
   ChannelSayInput,
@@ -10,6 +11,10 @@ import {
   TaskCreateInput,
   TaskUpdateInput,
 } from "@hedoffice/schema";
+
+/** Long-poll bounds for `channel.listen` (waitMs is clamped, poll is coarse). */
+const LISTEN_MAX_WAIT_MS = 25_000;
+const LISTEN_POLL_MS = 250;
 
 type ToolResult = {
   content: Array<{ type: "text"; text: string }>;
@@ -171,12 +176,52 @@ export function registerCubicleTools(
     "channel.listen",
     {
       description:
-        "Read recent user utterances in this cubicle since a cursor (channel.user_spoke).",
+        "Read recent user utterances in this cubicle since a cursor (channel.user_spoke). " +
+        "Pass waitMs to long-poll: the call holds until an utterance arrives or the wait elapses.",
       inputSchema: ChannelListenInput.shape,
     },
-    (args) => tracked(office, agentId, "channel.listen", args, () =>
-      ok(channel.listen(agentId, args.sinceEventId)),
-    ),
+    (args) => tracked(office, agentId, "channel.listen", args, async () => {
+      let result = channel.listen(agentId, args.sinceEventId);
+      const wait = Math.min(args.waitMs ?? 0, LISTEN_MAX_WAIT_MS);
+      const deadline = Date.now() + wait;
+      // Long-poll: only when a cursor is given and nothing new is there yet.
+      // (Without a cursor the first page of history is the answer.)
+      while (
+        result.utterances.length === 0 &&
+        args.sinceEventId !== undefined &&
+        Date.now() < deadline
+      ) {
+        await sleep(LISTEN_POLL_MS);
+        result = channel.listen(agentId, args.sinceEventId);
+      }
+      return ok(result);
+    }),
+  );
+
+  server.registerTool(
+    "cubicle.brief",
+    {
+      description:
+        "Read this cubicle's briefing: your charter (role, responsibilities, boundaries " +
+        "set by the operator), your permission stage, and how gated tools behave. " +
+        "Call this first when you connect.",
+      inputSchema: {},
+    },
+    () => tracked(office, agentId, "cubicle.brief", {}, () => {
+      const record = office.agents.get(agentId);
+      const stage = record?.stage ?? "supervised";
+      return ok({
+        name: record?.name ?? null,
+        charter: cubicles.charterRead(agentId),
+        stage,
+        gatedToolPolicy: STAGE_POLICY[stage],
+        gatedTools: [...MUTATING_TOOLS],
+        notes:
+          "Presence is inferred from your MCP activity; there is no presence.set. " +
+          "Mutating tools follow your stage policy unless the operator set a per-tool override. " +
+          "When unsure or blocked, write the question to your notebook and say it on the channel — escalate, don't improvise.",
+      });
+    }),
   );
 
   server.registerTool(

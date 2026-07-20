@@ -69,7 +69,16 @@ importers:
       '@hedoffice/mcp-server':
         specifier: workspace:*
         version: link:../../packages/mcp-server
+      '@hedoffice/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+      express:
+        specifier: ^4.21.1
+        version: 4.22.2
     devDependencies:
+      '@types/express':
+        specifier: ^4.17.21
+        version: 4.17.25
       '@types/node':
         specifier: ^22.9.0
         version: 22.19.21
