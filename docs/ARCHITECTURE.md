@@ -158,10 +158,15 @@ sentence chunk — rather than waiting for the full response.
 - `notebook.read()` → returns the agent's notebook content.
 - `notebook.write({ content })` / `notebook.append({ text })` → persists context/memory.
 - `task.create({ title, detail? })`, `task.update({ taskId, status?, detail? })`, `task.list()`.
-- `channel.listen()` → returns recent user utterances (pulls `channel.user_spoke`
-  events since a cursor); long-poll variant for near-real-time delivery.
+- `channel.listen({ sinceEventId?, waitMs? })` → returns recent user utterances
+  (pulls `channel.user_spoke` events since a cursor); with `waitMs` (≤25 s) it
+  **long-polls**, holding until an utterance arrives — near-real-time delivery
+  without hammering.
 - `channel.say({ text, voiceId? })` → enqueues text for TTS playback (emits `channel.agent_said`).
 - `cubicle.status()` → optional, lets the agent read its own presence/task summary.
+- `cubicle.brief()` → the agent's onboarding read: its operator-authored
+  **charter** (role/boundaries doc, `charter.written` events), its permission
+  stage, and how the gated tools behave (docs/INTEGRATION.md).
 
 > **Presence is NOT a tool — it is inferred.** There is deliberately **no
 > `presence.set`**.

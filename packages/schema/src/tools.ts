@@ -40,6 +40,7 @@ export const ChannelSayInput = z.object({
 
 // cubicle.*
 export const CubicleStatusInput = z.object({});
+export const CubicleBriefInput = z.object({});
 
 /** Registry of tool name -> input schema, for wiring MCP tool defs in Phase 1. */
 export const TOOL_INPUTS = {
@@ -52,6 +53,7 @@ export const TOOL_INPUTS = {
   "channel.listen": ChannelListenInput,
   "channel.say": ChannelSayInput,
   "cubicle.status": CubicleStatusInput,
+  "cubicle.brief": CubicleBriefInput,
 } as const;
 
 export type ToolName = keyof typeof TOOL_INPUTS;

@@ -14,8 +14,12 @@ orchestration core + the stateful Streamable HTTP MCP server, bound to
 - `GET /` → `{ name, status, mcp }` (landing)
 - `POST /mcp` → the MCP endpoint (per-agent bearer auth)
 
-On boot it registers a `demo` agent and logs its bearer token so you can connect
-an agent immediately.
+On first boot into an **empty registry** it registers a `demo` agent and logs
+its bearer token so you can connect an agent immediately (a restart on a
+persistent DB never re-seeds it; set `HEDOFFICE_DEMO_AGENT=0` to disable
+entirely). For real agents, register named identities instead — see
+[INTEGRATION.md](INTEGRATION.md) (CLI locally, or the `/admin/agents…` API
+below on a deployed instance).
 
 ## Railway
 
@@ -39,6 +43,10 @@ Env vars:
 - `HOST` — defaults to `0.0.0.0`.
 - `HEDOFFICE_DB` — optional SQLite path on a mounted volume (defaults to
   in-memory; in-memory means state is lost on redeploy/restart).
+- `HEDOFFICE_ADMIN_TOKEN` — enables the operator admin API (`/admin/agents…`:
+  register / list / stage / charter / rotate / revoke), guarded by this bearer
+  token. Unset = no admin surface. Keep it secret; it is not an agent token.
+- `HEDOFFICE_DEMO_AGENT` — set `0` to never seed the demo agent.
 
 Connect an agent (openclaw/Hermes-style):
 

@@ -85,6 +85,40 @@ export class CubicleState {
     return next;
   }
 
+  // --- charter ----------------------------------------------------------------
+  // The operator-authored role/boundaries document for this cubicle's agent
+  // (role, responsibilities, allowed/blocked actions, escalation rules). Agents
+  // read it via the `cubicle.brief` tool; only the operator writes it.
+
+  charterRead(agentId: string): string {
+    const row = this.db
+      .prepare(`SELECT content FROM charters WHERE agent_id = ?`)
+      .get(agentId) as { content: string } | undefined;
+    return row?.content ?? "";
+  }
+
+  charterWrite(agentId: string, content: string): void {
+    const now = Date.now();
+    this.db
+      .prepare(
+        `INSERT INTO charters (agent_id, content, updated_at)
+         VALUES (@agentId, @content, @now)
+         ON CONFLICT(agent_id) DO UPDATE SET content = @content, updated_at = @now`,
+      )
+      .run({ agentId, content, now });
+    this.store.append({
+      agentId,
+      streamId: cubicleOf(agentId),
+      actor: "user",
+      type: "charter.written",
+      payload: {
+        agentId,
+        newHash: sha256(content),
+        byteLen: Buffer.byteLength(content, "utf8"),
+      },
+    });
+  }
+
   // --- tasks ------------------------------------------------------------------
 
   taskCreate(agentId: string, title: string, detail?: string): Task {

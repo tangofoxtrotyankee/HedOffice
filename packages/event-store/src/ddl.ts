@@ -53,7 +53,16 @@ CREATE TABLE IF NOT EXISTS agents (
   agent_id   TEXT PRIMARY KEY,
   name       TEXT NOT NULL,
   token_hash TEXT,
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  stage      TEXT NOT NULL DEFAULT 'supervised'
+             CHECK (stage IN ('observe','supervised','autonomous'))
+);
+
+-- Operator-authored role/boundaries document per cubicle (docs/INTEGRATION.md).
+CREATE TABLE IF NOT EXISTS charters (
+  agent_id   TEXT PRIMARY KEY,
+  content    TEXT NOT NULL DEFAULT '',
+  updated_at INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS presence (

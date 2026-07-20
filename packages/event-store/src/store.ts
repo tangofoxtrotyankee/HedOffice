@@ -57,6 +57,23 @@ export class EventStore {
     this.db.pragma("journal_mode = WAL");
     this.db.pragma("foreign_keys = ON");
     this.db.exec(DDL);
+    this.migrate();
+  }
+
+  /**
+   * Additive migrations for databases created before a column existed
+   * (CREATE TABLE IF NOT EXISTS never alters an existing table).
+   */
+  private migrate(): void {
+    const agentCols = (
+      this.db.pragma("table_info(agents)") as Array<{ name: string }>
+    ).map((c) => c.name);
+    if (!agentCols.includes("stage")) {
+      this.db.exec(
+        `ALTER TABLE agents ADD COLUMN stage TEXT NOT NULL DEFAULT 'supervised'
+         CHECK (stage IN ('observe','supervised','autonomous'))`,
+      );
+    }
   }
 
   /** Validate and append one event; returns it with its assigned id and ts. */

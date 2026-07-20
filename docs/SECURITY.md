@@ -84,6 +84,24 @@ Each tool is tagged with a sensitivity level:
 > the gate falls through to allow **and logs an `audit.security_event`** — so
 > production must register an approver. Default policy is `prompt`.
 
+## Staged permissions (per-agent trust ladder)
+
+Each registered agent carries a **permission stage** that sets the *default*
+gate policy for the mutating tools (per-tool overrides still win):
+
+| Stage        | Gate policy | Meaning                                        |
+|--------------|-------------|------------------------------------------------|
+| `observe`    | `deny`      | read + channel only — first-link / testing     |
+| `supervised` | `prompt`    | human approves each mutating action (default)  |
+| `autonomous` | `auto`      | allowed, still fully audit-logged              |
+
+New agents registered through the operator surfaces (CLI / admin API) start at
+`observe`; promotion is an explicit operator act (`agents stage …` or
+`POST /admin/agents/:id/stage`) and every change emits `agent.stage_changed`.
+Revocation (`agent.revoked`) nulls the token hash — the kill switch — while
+keeping the cubicle's history. See [INTEGRATION.md](INTEGRATION.md) for the
+rollout playbook.
+
 ## Audit logging
 
 Every tool call, result, approval decision, connection, and security event is an
