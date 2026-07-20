@@ -42,6 +42,13 @@ export const ChannelSayInput = z.object({
 export const CubicleStatusInput = z.object({});
 export const CubicleBriefInput = z.object({});
 
+// library.* — the shared governance library (read-only for agents)
+export const LibraryListInput = z.object({});
+export const LibraryReadInput = z.object({
+  /** Doc path, e.g. "constitution.md" or "decision_trees/user_registered.md". */
+  path: z.string().min(1),
+});
+
 /** Registry of tool name -> input schema, for wiring MCP tool defs in Phase 1. */
 export const TOOL_INPUTS = {
   "notebook.read": NotebookReadInput,
@@ -54,6 +61,8 @@ export const TOOL_INPUTS = {
   "channel.say": ChannelSayInput,
   "cubicle.status": CubicleStatusInput,
   "cubicle.brief": CubicleBriefInput,
+  "library.list": LibraryListInput,
+  "library.read": LibraryReadInput,
 } as const;
 
 export type ToolName = keyof typeof TOOL_INPUTS;

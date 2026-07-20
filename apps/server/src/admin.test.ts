@@ -96,6 +96,37 @@ describe("admin API (operator agent management — secret-free)", () => {
     expect(booted!.office.cubicles.charterRead(agentId)).toBe(bigCharter);
   });
 
+  it("manages the governance library over HTTP (list/get/put/delete)", async () => {
+    await boot();
+    const put = await admin("/admin/library/decision_trees/user_registered.md", {
+      method: "PUT",
+      body: JSON.stringify({ content: "# user.registered\nIf no payment: log lead." }),
+    });
+    expect(put.status).toBe(200);
+
+    const list = await admin("/admin/library").then((r) => r.json());
+    expect(list.docs.map((d: { path: string }) => d.path)).toEqual([
+      "decision_trees/user_registered.md",
+    ]);
+
+    const got = await admin("/admin/library/decision_trees/user_registered.md").then((r) =>
+      r.json(),
+    );
+    expect(got.content).toContain("log lead");
+
+    const bad = await admin("/admin/library/..%2Fetc", {
+      method: "PUT",
+      body: JSON.stringify({ content: "x" }),
+    });
+    expect(bad.status).toBe(400);
+
+    const del = await admin("/admin/library/decision_trees/user_registered.md", {
+      method: "DELETE",
+    });
+    expect(del.status).toBe(200);
+    expect(booted!.office.library.list()).toHaveLength(0);
+  });
+
   it("does not expose /admin routes when no admin token is configured", async () => {
     booted = bootHedOffice({ env: {} }); // no adminToken
     port = await booted.server.listen(0);

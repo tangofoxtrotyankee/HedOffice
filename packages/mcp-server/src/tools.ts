@@ -6,6 +6,7 @@ import { cubicleOf, MUTATING_TOOLS, STAGE_POLICY, sha256 } from "@hedoffice/core
 import {
   ChannelListenInput,
   ChannelSayInput,
+  LibraryReadInput,
   NotebookAppendInput,
   NotebookWriteInput,
   TaskCreateInput,
@@ -216,9 +217,12 @@ export function registerCubicleTools(
         stage,
         gatedToolPolicy: STAGE_POLICY[stage],
         gatedTools: [...MUTATING_TOOLS],
+        library: office.library.list().map((d) => d.path),
         notes:
           "Presence is inferred from your MCP activity; there is no presence.set. " +
           "Mutating tools follow your stage policy unless the operator set a per-tool override. " +
+          "Read the governance library (library.list / library.read) — the constitution and " +
+          "process docs there bind you alongside your charter. " +
           "When unsure or blocked, write the question to your notebook and say it on the channel — escalate, don't improvise.",
       });
     }),
@@ -233,6 +237,35 @@ export function registerCubicleTools(
     (args) => tracked(office, agentId, "channel.say", args, () => {
       const eventId = channel.agentSaid(agentId, args.text, { voiceId: args.voiceId ?? null });
       return ok({ ok: true, eventId });
+    }),
+  );
+
+  server.registerTool(
+    "library.list",
+    {
+      description:
+        "List the shared governance library (constitution, ethics, process docs, " +
+        "decision trees). Operator-authored; read-only for agents.",
+      inputSchema: {},
+    },
+    () => tracked(office, agentId, "library.list", {}, () =>
+      ok({ docs: office.library.list() }),
+    ),
+  );
+
+  server.registerTool(
+    "library.read",
+    {
+      description:
+        'Read one governance-library doc by path (e.g. "constitution.md", ' +
+        '"decision_trees/user_registered.md").',
+      inputSchema: LibraryReadInput.shape,
+    },
+    (args) => tracked(office, agentId, "library.read", args, () => {
+      const content = office.library.read(args.path);
+      return content === undefined
+        ? ok({ ok: false, error: "not_found", path: args.path })
+        : ok({ path: args.path, content });
     }),
   );
 }

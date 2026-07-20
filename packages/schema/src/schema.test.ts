@@ -62,9 +62,11 @@ describe("event schema", () => {
 });
 
 describe("tool inputs", () => {
-  it("covers all ten v1 tools", () => {
-    expect(TOOL_NAMES).toHaveLength(10);
+  it("covers all twelve v1 tools", () => {
+    expect(TOOL_NAMES).toHaveLength(12);
     expect(TOOL_NAMES).toContain("cubicle.brief");
+    expect(TOOL_NAMES).toContain("library.list");
+    expect(TOOL_NAMES).toContain("library.read");
   });
 
   it("requires a non-empty task title", () => {

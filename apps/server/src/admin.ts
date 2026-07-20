@@ -1,6 +1,7 @@
 import type express from "express";
 import type { Request, Response, NextFunction } from "express";
 import type { Office } from "@hedoffice/core";
+import { isValidLibraryPath } from "@hedoffice/core";
 import { PermissionStage } from "@hedoffice/schema";
 
 /**
@@ -85,5 +86,46 @@ export function attachAdminApi(
     }
     office.cubicles.charterWrite((req.params.id ?? ""), content);
     res.json({ ok: true, byteLen: Buffer.byteLength(content, "utf8") });
+  });
+
+  // --- governance library (shared docs; operator-authored, agent-readable) ----
+  // Doc paths contain slashes, so they ride in the wildcard tail of the route.
+
+  app.get("/admin/library", requireAdmin, (_req, res) => {
+    res.json({ docs: office.library.list() });
+  });
+
+  app.get("/admin/library/*", requireAdmin, (req, res) => {
+    const path = (req.params as Record<string, string>)[0] ?? "";
+    const content = office.library.read(path);
+    if (content === undefined) {
+      res.status(404).json({ error: "unknown doc", path });
+      return;
+    }
+    res.json({ path, content });
+  });
+
+  app.put("/admin/library/*", requireAdmin, (req, res) => {
+    const path = (req.params as Record<string, string>)[0] ?? "";
+    if (!isValidLibraryPath(path)) {
+      res.status(400).json({ error: "invalid doc path", path });
+      return;
+    }
+    const content = typeof req.body?.content === "string" ? req.body.content : undefined;
+    if (content === undefined) {
+      res.status(400).json({ error: "content (string) is required" });
+      return;
+    }
+    office.library.write(path, content);
+    res.json({ ok: true, path, byteLen: Buffer.byteLength(content, "utf8") });
+  });
+
+  app.delete("/admin/library/*", requireAdmin, (req, res) => {
+    const path = (req.params as Record<string, string>)[0] ?? "";
+    if (!office.library.delete(path)) {
+      res.status(404).json({ error: "unknown doc", path });
+      return;
+    }
+    res.json({ ok: true, path });
   });
 }
