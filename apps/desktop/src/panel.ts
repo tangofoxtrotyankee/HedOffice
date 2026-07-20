@@ -10,6 +10,7 @@ export const FEED_KINDS = {
   run: { glyph: "◉", colorVar: "--status-running" },
   think: { glyph: "◐", colorVar: "--status-thinking" },
   read: { glyph: "○", colorVar: "--status-idle" },
+  say: { glyph: "»", colorVar: "--feedback-info" },
   warn: { glyph: "!", colorVar: "--feedback-warn" },
   error: { glyph: "✗", colorVar: "--feedback-error" },
 } as const;
@@ -32,11 +33,11 @@ export function formatFeedLine(l: FeedLine): string {
   return `${head}  ${body}`;
 }
 
-export type TaskState = "done" | "current" | "open";
+export type TaskState = "done" | "current" | "open" | "blocked";
 
-/** Task row glyphs: ✓ done, ◉ current, ○ open. */
+/** Task row glyphs: ✓ done, ◉ current, ○ open, ▓ blocked (matches presence). */
 export function taskGlyph(state: TaskState): string {
-  return { done: "✓", current: "◉", open: "○" }[state];
+  return { done: "✓", current: "◉", open: "○", blocked: "▓" }[state];
 }
 
 /** Voice input/output level meter in block cells, e.g. `▣▣▣▢▢▢▢`. */

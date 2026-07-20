@@ -6,6 +6,7 @@ import { DepartmentRail } from "./DepartmentRail";
 import { RoomsPreview } from "./RoomsPreview";
 import { ALL_DEPARTMENTS } from "./rail";
 import { cubicleViewToData, sampleDataSource, type DataSource } from "./datasource";
+import { enqueue, remove } from "./approval-queue";
 import type { CubicleData } from "./cubicle";
 import type { ApprovalRequestDTO } from "./shell/ipc-contract";
 
@@ -42,7 +43,10 @@ export function App({ dataSource = sampleDataSource }: { dataSource?: DataSource
   const [dept, setDept] = useState<string>(ALL_DEPARTMENTS);
   const [walkedInto, setWalkedInto] = useState<CubicleData | null>(null);
   const [floor, setFloor] = useState<CubicleData[]>(() => dataSource.getFloor());
-  const [approval, setApproval] = useState<ApprovalRequestDTO | null>(null);
+  // Pending approvals queue (multiple agents can block at once; the server
+  // replays open approvals on reconnect). The modal shows the head.
+  const [approvals, setApprovals] = useState<ApprovalRequestDTO[]>([]);
+  const approval = approvals[0] ?? null;
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -56,10 +60,18 @@ export function App({ dataSource = sampleDataSource }: { dataSource?: DataSource
     const refresh = () =>
       void api.getFloor().then((views) => setFloor(views.map(cubicleViewToData)));
     refresh();
-    const offApproval = api.onApprovalRequest(setApproval);
+    const offApproval = api.onApprovalRequest((req) =>
+      setApprovals((queue) => enqueue(queue, req)),
+    );
+    // Resolved elsewhere (another operator, or the server's timeout
+    // auto-deny): dismiss the stale prompt instead of letting it 404 later.
+    const offResolved = api.onApprovalResolved?.((approvalId) =>
+      setApprovals((queue) => remove(queue, approvalId)),
+    );
     const offUpdate = api.onUpdate(refresh);
     return () => {
       offApproval();
+      offResolved?.();
       offUpdate();
     };
   }, []);
@@ -86,7 +98,7 @@ export function App({ dataSource = sampleDataSource }: { dataSource?: DataSource
           action={approval.action}
           onResolve={(decision) => {
             void window.hedoffice?.resolveApproval(approval.approvalId, decision);
-            setApproval(null);
+            setApprovals((queue) => remove(queue, approval.approvalId));
           }}
         />
       )}

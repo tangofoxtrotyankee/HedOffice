@@ -20,6 +20,7 @@ describe("cubicleViewToData", () => {
       activity: "notebook.write",
       tasksDone: 1,
       tasksTotal: 3,
+      agentId: "agent-1",
     });
   });
   it("falls back to 'idle' when there is no activity ticker", () => {

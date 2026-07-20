@@ -9,7 +9,9 @@ afterEach(async () => {
 
 describe("bootHedOffice (cloud entrypoint)", () => {
   it("serves a health check and a landing payload", async () => {
-    const { server } = bootHedOffice();
+    // uiDist points at nowhere so the JSON landing (headless mode) is exercised
+    // even when the desktop package has a real build on disk.
+    const { server } = bootHedOffice({ uiDist: "/nonexistent-ui-dist" });
     close = () => server.close();
     const port = await server.listen(0); // loopback for the test
 

@@ -5,7 +5,7 @@ import { HedOfficeServer } from "@hedoffice/mcp-server";
 import type { ApprovalDecision } from "@hedoffice/schema";
 import { IPC } from "../src/shell/ipc-contract";
 import { makeHandlers } from "./handlers";
-import { createApprovalBridge } from "./approval-bridge";
+import { createApprovalBridge } from "@hedoffice/core";
 import { ElectronSecretStore } from "./secrets-electron";
 
 /**

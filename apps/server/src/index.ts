@@ -13,6 +13,8 @@ import { bootHedOffice } from "./boot.js";
  * - `HEDOFFICE_ADMIN_TOKEN`    — enables the secret-free admin API
  *   (`/admin/agents…`: list/stage/charter/revoke) guarded by this bearer token.
  * - `HEDOFFICE_DEMO_AGENT`     — set to `0` to never seed the demo agent.
+ * - `HEDOFFICE_APPROVAL_TIMEOUT_MS` — unanswered web-UI approval prompts
+ *   auto-deny after this long (default 300000 = 5 min).
  *
  * NOTE: cloud deploy is a *later* option (the master plan ships local-first). A
  * publicly exposed office means untrusted agents can reach its tools — keep the
@@ -21,10 +23,11 @@ import { bootHedOffice } from "./boot.js";
 const port = Number(process.env.PORT ?? 4317);
 const host = process.env.HOST ?? "0.0.0.0";
 
-const { server, office, demoToken, seededAgents } = bootHedOffice({
+const { server, office, demoToken, seededAgents, uiRoot } = bootHedOffice({
   demoAgent: process.env.HEDOFFICE_DEMO_AGENT !== "0",
   location: process.env.HEDOFFICE_DB,
   adminToken: process.env.HEDOFFICE_ADMIN_TOKEN,
+  approvalTimeoutMs: Number(process.env.HEDOFFICE_APPROVAL_TIMEOUT_MS ?? 300_000),
 });
 
 server
@@ -35,6 +38,12 @@ server
     console.log(`  mcp:      POST /mcp   (Streamable HTTP)`);
     if (process.env.HEDOFFICE_ADMIN_TOKEN) {
       console.log(`  admin:    /admin/agents (bearer: HEDOFFICE_ADMIN_TOKEN)`);
+      console.log(`  ui api:   /ui/api (bearer or ?token=: HEDOFFICE_ADMIN_TOKEN)`);
+    }
+    if (uiRoot) {
+      console.log(`  office ui: GET /  (serving ${uiRoot})`);
+    } else {
+      console.log(`  office ui: not found (build @hedoffice/desktop to serve it at /)`);
     }
     if (seededAgents.length > 0) {
       console.log(

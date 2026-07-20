@@ -17,6 +17,8 @@ export interface CubicleData {
   tasksTotal: number;
   /** An unprovisioned seat — rendered as a dashed empty box. */
   empty?: boolean;
+  /** Live identity for detail fetches; absent on sample/empty cubicles. */
+  agentId?: string;
 }
 
 export const CARD_WIDTH = 27;

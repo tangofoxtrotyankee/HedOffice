@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ApprovalRequest } from "@hedoffice/core";
-import { createApprovalBridge } from "./approval-bridge";
+import type { ApprovalRequest } from "./approvals.js";
+import { createApprovalBridge } from "./approval-bridge.js";
 
 const req = (approvalId: string): ApprovalRequest => ({
   approvalId,
@@ -16,10 +16,12 @@ describe("createApprovalBridge", () => {
     const p = bridge.approver(req("ap-1"));
     expect(notify).toHaveBeenCalledOnce();
     expect(bridge.pendingIds()).toEqual(["ap-1"]);
+    expect(bridge.pending()).toEqual([req("ap-1")]);
 
     expect(bridge.resolve("ap-1", "allow")).toBe(true);
     await expect(p).resolves.toBe("allow");
     expect(bridge.pendingIds()).toEqual([]);
+    expect(bridge.pending()).toEqual([]);
   });
 
   it("carries a deny decision back to the gate", async () => {
@@ -39,6 +41,7 @@ describe("createApprovalBridge", () => {
     const a = bridge.approver(req("a"));
     const b = bridge.approver(req("b"));
     expect(bridge.pendingIds().sort()).toEqual(["a", "b"]);
+    expect(bridge.pending().map((r) => r.approvalId).sort()).toEqual(["a", "b"]);
     bridge.resolve("b", "deny");
     bridge.resolve("a", "allow");
     await expect(a).resolves.toBe("allow");
