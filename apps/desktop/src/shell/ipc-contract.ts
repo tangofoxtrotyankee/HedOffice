@@ -44,6 +44,13 @@ export interface HedofficeApi {
   resolveApproval(approvalId: string, decision: ApprovalDecision): Promise<void>;
   /** Subscribe to approval requests; returns an unsubscribe fn. */
   onApprovalRequest(cb: (req: ApprovalRequestDTO) => void): () => void;
+  /**
+   * Subscribe to approvals resolved elsewhere (another operator, or the
+   * server's timeout auto-deny) so stale prompts can be dismissed. Optional:
+   * the web shim implements it; the Electron shell has a single surface and
+   * may omit it.
+   */
+  onApprovalResolved?(cb: (approvalId: string) => void): () => void;
   /** Subscribe to "floor changed" pings (re-fetch on fire); returns unsubscribe. */
   onUpdate(cb: () => void): () => void;
 }

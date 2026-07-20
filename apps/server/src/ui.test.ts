@@ -138,12 +138,18 @@ describe("operator web-UI API", () => {
     close();
   });
 
-  it("auto-denies an unanswered approval after the timeout", async () => {
+  it("auto-denies an unanswered approval after the timeout AND notifies browsers", async () => {
     await boot({ approvalTimeoutMs: 30 });
     const { agentId } = booted!.office.registerAgent("Lee.", "supervised");
+    const { events, close } = await openEvents();
     await expect(
       booted!.office.approvals.request(agentId, "task.update", "task.update"),
     ).resolves.toBe("deny");
+    // The stale prompt must be dismissed in connected UIs (Codex review P2).
+    await until(() => events.some((e) => e.event === "approval-resolved"));
+    const approvalId = events.find((e) => e.event === "approval")!.data.approvalId;
+    expect(events.find((e) => e.event === "approval-resolved")!.data).toEqual({ approvalId });
+    close();
   });
 
   it("pings update on presence changes", async () => {

@@ -63,7 +63,18 @@ export function attachUiApi(
     for (const client of clients) send(client, event, data);
   };
 
-  const bridge = createApprovalBridge((req) => broadcast("approval", toDTO(req)));
+  const inner = createApprovalBridge((req) => broadcast("approval", toDTO(req)));
+  // Every successful resolution — operator click OR the boot-level timeout
+  // auto-deny — must clear the prompt in every connected browser, so the
+  // broadcast lives on resolve() itself, not on the POST route.
+  const bridge: ApprovalBridge = {
+    ...inner,
+    resolve: (approvalId, decision) => {
+      const ok = inner.resolve(approvalId, decision);
+      if (ok) broadcast("approval-resolved", { approvalId });
+      return ok;
+    },
+  };
   updateListeners.add(() => broadcast("update"));
 
   const requireUi = (req: Request, res: Response, next: NextFunction): void => {
@@ -108,7 +119,6 @@ export function attachUiApi(
       res.status(404).json({ error: "unknown or already-resolved approval" });
       return;
     }
-    broadcast("approval-resolved", { approvalId });
     res.json({ ok: true });
   });
 

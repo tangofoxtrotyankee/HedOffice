@@ -82,6 +82,18 @@ describe("createWebApi", () => {
     es.onopen?.(); // reconnect heals via refresh ping to remaining subscribers
   });
 
+  it("fans out approval-resolved notices (timeout/other-operator dismissals)", () => {
+    vi.stubGlobal("fetch", vi.fn());
+    const api = createWebApi("tok");
+    const resolved = vi.fn();
+    const off = api.onApprovalResolved!(resolved);
+    StubEventSource.last!.emit("approval-resolved", { approvalId: "ap-7" });
+    expect(resolved).toHaveBeenCalledWith("ap-7");
+    off();
+    StubEventSource.last!.emit("approval-resolved", { approvalId: "ap-8" });
+    expect(resolved).toHaveBeenCalledTimes(1);
+  });
+
   it("posts approval decisions", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { ok: true }));
     vi.stubGlobal("fetch", fetchMock);

@@ -51,6 +51,7 @@ export function createWebApi(token: string, base = ""): HedofficeApi {
   let stream: EventSource | undefined;
   const updateCbs = new Set<() => void>();
   const approvalCbs = new Set<(req: ApprovalRequestDTO) => void>();
+  const resolvedCbs = new Set<(approvalId: string) => void>();
 
   const ensureStream = (): void => {
     if (stream) return;
@@ -63,6 +64,10 @@ export function createWebApi(token: string, base = ""): HedofficeApi {
     stream.addEventListener("approval", (e) => {
       const req = JSON.parse((e as MessageEvent).data) as ApprovalRequestDTO;
       for (const cb of approvalCbs) cb(req);
+    });
+    stream.addEventListener("approval-resolved", (e) => {
+      const { approvalId } = JSON.parse((e as MessageEvent).data) as { approvalId: string };
+      for (const cb of resolvedCbs) cb(approvalId);
     });
     // After a (re)connect the client may have missed pings — refresh once.
     stream.onopen = () => {
@@ -91,6 +96,11 @@ export function createWebApi(token: string, base = ""): HedofficeApi {
       ensureStream();
       approvalCbs.add(cb);
       return () => approvalCbs.delete(cb);
+    },
+    onApprovalResolved: (cb) => {
+      ensureStream();
+      resolvedCbs.add(cb);
+      return () => resolvedCbs.delete(cb);
     },
     onUpdate: (cb) => {
       ensureStream();
