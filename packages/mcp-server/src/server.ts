@@ -49,6 +49,7 @@ export class HedOfficeServer {
   private readonly sessions = new Map<string, Session>();
   private httpServer?: HttpServer;
   private boundHost?: string;
+  private uiRoot?: string;
 
   constructor(private readonly opts: HedOfficeServerOptions = {}) {
     this.office = opts.office ?? new Office();
@@ -62,9 +63,23 @@ export class HedOfficeServer {
     this.app.get("/healthz", (_req, res) => {
       res.json({ ok: true, sessions: this.sessions.size });
     });
-    this.app.get("/", (_req, res) => {
+    this.app.get("/", (_req, res, next) => {
+      if (this.uiRoot) {
+        next(); // fall through to the express.static mount from serveUi()
+        return;
+      }
       res.json({ name: "hedoffice", status: "ok", mcp: "/mcp" });
     });
+  }
+
+  /**
+   * Mount the built office UI (index.html + hashed assets) at the root. Safe to
+   * call once, before listen(): /mcp, /healthz and any /admin or /ui/api routes
+   * are registered earlier on the stack, so they always win over static files.
+   */
+  serveUi(root: string): void {
+    this.uiRoot = root;
+    this.app.use(express.static(root, { index: "index.html" }));
   }
 
   get sessionCount(): number {

@@ -21,6 +21,7 @@ export function cubicleViewToData(v: CubicleView): CubicleData {
     activity: v.activity || "idle",
     tasksDone: v.tasksDone,
     tasksTotal: v.tasksTotal,
+    agentId: v.agentId,
   };
 }
 

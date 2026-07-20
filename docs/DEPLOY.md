@@ -1,18 +1,23 @@
 # HedOffice — Cloud deploy (optional)
 
 > **HedOffice is local-first.** Cloud deploy is a *later option* (per the master
-> plan), and it ships **only the headless MCP server** — the Electron desktop UI
-> is not server-deployable. Use this for a remote backend that BYO agents connect
-> to; for real use, prefer the local app.
+> plan). The deployed server now ships the **office UI in the browser** (same
+> renderer the Electron shell wraps) plus the headless MCP server. Voice stays a
+> local-app feature; the web UI covers the floor, walk-in panels, live presence,
+> and the approval gate.
 
 ## What gets deployed
 
 `@hedoffice/server` (`apps/server/`) — a thin entrypoint that boots the
 orchestration core + the stateful Streamable HTTP MCP server, bound to
 `0.0.0.0:$PORT`, with:
+- `GET /` → the **office UI** (when the `@hedoffice/desktop` build is present;
+  a JSON landing otherwise)
 - `GET /healthz` → `{ ok, sessions }` (health check)
-- `GET /` → `{ name, status, mcp }` (landing)
 - `POST /mcp` → the MCP endpoint (per-agent bearer auth)
+- `/ui/api/*` → the operator web-UI API (floor, cubicle detail, approvals,
+  SSE events) — guarded by `HEDOFFICE_ADMIN_TOKEN`
+- `/admin/*` → the secret-free admin API
 
 On first boot into an **empty registry** it registers a `demo` agent and logs
 its bearer token so you can connect an agent immediately (a restart on a
@@ -122,6 +127,35 @@ loudly, and the health check keeps traffic off a misconfigured deploy.
    `HEDOFFICE_AGENT_TOKEN_*` variable (env seeding re-arms the token on boot
    while the variable exists — the variables are the source of truth).
 
+## Office UI on Railway
+
+Open `https://<app>.up.railway.app/` in a browser. The office UI loads and asks
+for the **operator token** — enter the value of `HEDOFFICE_ADMIN_TOKEN` (it is
+remembered in the browser's localStorage; first-login convenience:
+`https://<app>.up.railway.app/#token=<operator token>` logs in and strips the
+hash). You get:
+
+- the **floor** with live inferred presence (updates stream over SSE);
+- **walk-in cubicles** showing each agent's real notebook, task list and
+  recent tool-call feed;
+- the **approval gate in the browser**: when a `supervised`-stage agent calls a
+  mutating tool, the approval modal pops up live — Approve/Deny resolves the
+  agent's pending call. Unanswered prompts auto-deny after
+  `HEDOFFICE_APPROVAL_TIMEOUT_MS` (default 5 min) so an unattended deploy
+  never wedges an agent. Open approvals are replayed to a reconnecting
+  browser.
+
+Notes:
+- The UI API is guarded by the operator token; the SSE stream authenticates
+  via a `?token=` query parameter (EventSource cannot send headers), which can
+  surface in Railway request logs — acceptable for the operator token over
+  HTTPS, but rotate it if you ever share logs.
+- **No agent registration from the web.** Provisioning stays in Railway
+  Variables (`HEDOFFICE_AGENT_TOKEN_*`) — no public surface mints secrets.
+- Voice (mic/TTS) is not part of the web deploy; that remains the local
+  Electron app's feature. The web Talk panel is display-only for now
+  (operators can inject text via `POST /ui/api/say/<agentId>`).
+
 Env var reference:
 - `PORT` — provided by Railway.
 - `HOST` — defaults to `0.0.0.0`.
@@ -135,6 +169,8 @@ Env var reference:
 - `HEDOFFICE_DEMO_AGENT` — set `0` to never seed the demo agent (recommended
   in cloud; it is also skipped automatically whenever any env-seeded or
   existing agent is present).
+- `HEDOFFICE_APPROVAL_TIMEOUT_MS` — how long a web-UI approval prompt may sit
+  unanswered before auto-denying (default `300000` = 5 min).
 
 Connect an agent (openclaw/Hermes-style) using the token you set in the
 `HEDOFFICE_AGENT_TOKEN_*` variable:

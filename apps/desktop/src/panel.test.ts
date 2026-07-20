@@ -29,6 +29,10 @@ describe("task glyphs", () => {
     expect(taskGlyph("done")).toBe("✓");
     expect(taskGlyph("current")).toBe("◉");
     expect(taskGlyph("open")).toBe("○");
+    expect(taskGlyph("blocked")).toBe("▓");
+    // Live feeds emit "say" lines (core views) — the kind must exist here or
+    // TerminalFeed's unguarded lookup would crash on real data.
+    expect(FEED_KINDS.say.glyph).toBe("»");
   });
 });
 

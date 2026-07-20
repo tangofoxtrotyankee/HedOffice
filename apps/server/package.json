@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@hedoffice/core": "workspace:*",
+    "@hedoffice/desktop": "workspace:*",
     "@hedoffice/mcp-server": "workspace:*",
     "@hedoffice/schema": "workspace:*",
     "express": "^4.21.1"

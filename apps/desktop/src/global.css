@@ -188,6 +188,22 @@ body {
 .btn-approve:hover { border-color: var(--feedback-success); }
 .btn-deny:hover { border-color: var(--feedback-error); }
 
+/* ---- token gate (web operator login; borrows the approval chrome) ---- */
+.token-input {
+  display: block;
+  width: 100%;
+  margin: var(--space-3) 0;
+  padding: var(--space-3);
+  background: var(--feed-bg);
+  color: var(--paper-100);
+  font-family: inherit;
+  font-size: var(--fs-body);
+  border: var(--border-thickness) solid var(--border-hairline);
+  border-radius: var(--radius-default);
+}
+.token-input:focus { outline: none; border-color: var(--accent-hero); }
+.token-error { color: var(--feedback-error); margin-bottom: var(--space-3); }
+
 /* ---- stage: department rail + floor ---- */
 .stage { flex: 1; display: flex; gap: var(--space-6); align-items: flex-start; }
 

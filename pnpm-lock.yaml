@@ -66,6 +66,9 @@ importers:
       '@hedoffice/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@hedoffice/desktop':
+        specifier: workspace:*
+        version: link:../desktop
       '@hedoffice/mcp-server':
         specifier: workspace:*
         version: link:../../packages/mcp-server

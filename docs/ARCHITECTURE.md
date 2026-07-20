@@ -173,6 +173,23 @@ sentence chunk — rather than waiting for the full response.
   authority limits, decision trees, process docs; `library.written` events).
   Read-only for agents — there is no library-write tool.
 
+## Operator surfaces (not agent-facing)
+
+Besides the MCP tools above, the deployed server exposes operator-only HTTP
+surfaces, both guarded by the operator token:
+
+- **`/admin/*`** — secret-free lifecycle: agents (list/stage/charter/revoke)
+  and the governance library (GET/PUT/DELETE by path).
+- **`/ui/api/*`** — what the browser-served office UI talks to:
+  `floor` (buildFloorView), `detail/:agentId` (buildCubicleDetail),
+  `approvals/:approvalId` (settles the gate via the shared
+  `createApprovalBridge`, now in `@hedoffice/core`), `say/:agentId`
+  (operator text → `channel.user_spoke`), and `events` — an SSE stream of
+  `update` pings (presence transitions), `approval` requests (with pending
+  replay on connect) and `approval-resolved` notices. The renderer is served
+  statically at `/`; the same `window.hedoffice` contract is implemented by
+  the Electron preload (IPC) and the web shim (`fetch` + `EventSource`).
+
 > **Presence is NOT a tool — it is inferred.** There is deliberately **no
 > `presence.set`**.
 
