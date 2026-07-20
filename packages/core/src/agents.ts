@@ -29,9 +29,19 @@ export interface AgentRecord {
 export class AgentRegistry {
   constructor(private readonly store: EventStore) {}
 
-  register(name: string, stage: PermissionStage = "supervised"): RegisteredAgent {
+  /**
+   * Register an agent. By default a fresh random token is minted; pass
+   * `opts.token` to register with an operator-provided secret instead (the
+   * env-seeded deployment path — the token then never transits anything but
+   * the caller's own config).
+   */
+  register(
+    name: string,
+    stage: PermissionStage = "supervised",
+    opts: { token?: string } = {},
+  ): RegisteredAgent {
     const agentId = randomUUID();
-    const token = randomBytes(32).toString("hex");
+    const token = opts.token ?? randomBytes(32).toString("hex");
     this.store.db
       .prepare(
         `INSERT INTO agents (agent_id, name, token_hash, created_at, stage)
@@ -89,10 +99,22 @@ export class AgentRegistry {
   rotateToken(agentId: string): string | undefined {
     if (!this.has(agentId)) return undefined;
     const token = randomBytes(32).toString("hex");
-    this.store.db
+    this.setToken(agentId, token);
+    return token;
+  }
+
+  /** Replace an agent's token with an operator-provided secret (env seeding). */
+  setToken(agentId: string, token: string): boolean {
+    const info = this.store.db
       .prepare(`UPDATE agents SET token_hash = ? WHERE agent_id = ?`)
       .run(sha256(token), agentId);
-    return token;
+    return info.changes > 0;
+  }
+
+  /** Look up an agent by its (operator-chosen) name. Names are unique per the
+   *  env-seeding contract; if duplicates exist, the oldest wins. */
+  findByName(name: string): AgentRecord | undefined {
+    return this.list().find((a) => a.name === name);
   }
 
   stageOf(agentId: string): PermissionStage | undefined {

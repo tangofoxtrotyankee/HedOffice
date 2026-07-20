@@ -33,19 +33,27 @@ This prints the `agentId` and the bearer token **once** — only the token's
 SHA-256 hash is stored. Other commands: `list`, `stage`, `charter`, `rotate`,
 `revoke` (`agents help` for usage).
 
-**Remotely, via the admin API** — set `HEDOFFICE_ADMIN_TOKEN` on the server
-(this enables `/admin/agents…`, guarded by that bearer token; without the env
-var the admin surface does not exist):
+**On a cloud deploy (Railway), via environment variables** — secrets live in
+Railway Variables only; **no HTTP route can create or return a token**. Declare
+the agent as variables and (re)deploy:
+
+```
+HEDOFFICE_AGENT_TOKEN_LEE = <openssl rand -hex 32>   # the bearer secret
+HEDOFFICE_AGENT_NAME_LEE  = Lee.
+HEDOFFICE_AGENT_STAGE_LEE = observe
+```
+
+Seeding is idempotent by name; rotating = change the token variable and
+redeploy (identity and history are preserved). See
+[DEPLOY.md](DEPLOY.md) for the full runbook.
+
+The optional admin API (`HEDOFFICE_ADMIN_TOKEN` enables `/admin/agents…`) is
+**secret-free** — it covers the non-secret lifecycle only:
 
 ```sh
-curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: application/json" \
-  -d '{"name":"Lee.","stage":"observe"}' https://<host>/admin/agents
-# → { agentId, name, stage, token }   ← token shown once
-
-# stage / charter / rotate / revoke:
+curl -H "Authorization: Bearer $ADMIN_TOKEN" https://<host>/admin/agents   # list
 curl -X POST … /admin/agents/<agentId>/stage    -d '{"stage":"supervised"}'
 curl -X PUT  … /admin/agents/<agentId>/charter  -d '{"content":"# Lee.\n…"}'
-curl -X POST … /admin/agents/<agentId>/rotate
 curl -X POST … /admin/agents/<agentId>/revoke   # kill switch
 ```
 

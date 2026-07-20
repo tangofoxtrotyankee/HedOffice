@@ -9,8 +9,13 @@ import { PermissionStage } from "@hedoffice/schema";
  *
  * Disabled unless an admin token is configured; every route requires
  * `Authorization: Bearer <adminToken>`. This token is the operator's key —
- * never give it to an agent. Registration responses contain the agent's
- * bearer token exactly once; only its hash is stored.
+ * never give it to an agent.
+ *
+ * SECRET-FREE BY DESIGN: no route here creates, returns, or accepts an agent
+ * token. Registration and rotation happen only through environment seeding
+ * (Railway Variables → HEDOFFICE_AGENT_TOKEN_*, see env-agents.ts) or the
+ * local CLI. The API covers the non-secret lifecycle: list, stage, charter,
+ * and revoke (the kill switch).
  */
 export function attachAdminApi(
   app: express.Express,
@@ -38,21 +43,6 @@ export function attachAdminApi(
     res.json({ agents: office.agents.list() });
   });
 
-  app.post("/admin/agents", requireAdmin, (req, res) => {
-    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
-    if (!name) {
-      res.status(400).json({ error: "name is required" });
-      return;
-    }
-    const stageParse = PermissionStage.safeParse(req.body?.stage ?? "observe");
-    if (!stageParse.success) {
-      res.status(400).json({ error: "invalid stage", allowed: PermissionStage.options });
-      return;
-    }
-    const { agentId, token } = office.agents.register(name, stageParse.data);
-    res.status(201).json({ agentId, name, stage: stageParse.data, token });
-  });
-
   app.post("/admin/agents/:id/revoke", requireAdmin, (req, res) => {
     const done = office.agents.revoke((req.params.id ?? ""));
     if (!done) {
@@ -60,15 +50,6 @@ export function attachAdminApi(
       return;
     }
     res.json({ ok: true });
-  });
-
-  app.post("/admin/agents/:id/rotate", requireAdmin, (req, res) => {
-    const token = office.agents.rotateToken((req.params.id ?? ""));
-    if (!token) {
-      res.status(404).json({ error: "unknown agent" });
-      return;
-    }
-    res.json({ agentId: (req.params.id ?? ""), token });
   });
 
   app.post("/admin/agents/:id/stage", requireAdmin, (req, res) => {
