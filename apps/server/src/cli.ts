@@ -1,12 +1,13 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
-import { Office } from "@hedoffice/core";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative, sep } from "node:path";
+import { Office, isValidLibraryPath } from "@hedoffice/core";
 import { PermissionStage } from "@hedoffice/schema";
 
 /**
- * Operator CLI for the agent registry — the local counterpart of the guarded
- * `/admin/agents…` HTTP API. Works directly against the SQLite store, so it can
- * run while the server is up (WAL mode) or offline.
+ * Operator CLI for the agent registry and governance library — the local
+ * counterpart of the guarded `/admin/…` HTTP API. Works directly against the
+ * SQLite store, so it can run while the server is up (WAL mode) or offline.
  *
  *   hedoffice-agents add "Lee." [--stage observe] [--charter path.md]
  *   hedoffice-agents list
@@ -14,6 +15,12 @@ import { PermissionStage } from "@hedoffice/schema";
  *   hedoffice-agents charter <agentId> <path.md | ->
  *   hedoffice-agents rotate <agentId>
  *   hedoffice-agents revoke <agentId>
+ *   hedoffice-agents library list
+ *   hedoffice-agents library get <docPath>
+ *   hedoffice-agents library set <docPath> <file.md | ->
+ *   hedoffice-agents library rm  <docPath>
+ *   hedoffice-agents library sync <vaultDir>     # push an Obsidian-style
+ *                                                # vault of .md files
  *
  * DB path: --db <path> or HEDOFFICE_DB (required — the registry must be the
  * same file the server runs on; an in-memory registry would be pointless here).
@@ -45,6 +52,7 @@ if (!command || command === "help" || command === "--help") {
   charter <agentId> <path.md | -stdin->
   rotate <agentId>
   revoke <agentId>
+  library list | get <docPath> | set <docPath> <file|-> | rm <docPath> | sync <vaultDir>
 DB: --db <path> or HEDOFFICE_DB env (must be the server's SQLite file).`);
   process.exit(0);
 }
@@ -68,6 +76,20 @@ function parseStage(raw: string | undefined, fallback?: PermissionStage): Permis
 
 function readContent(source: string): string {
   return source === "-" ? readFileSync(0, "utf8") : readFileSync(source, "utf8");
+}
+
+/** Recursively collect .md files under a vault directory (dotdirs skipped,
+ *  e.g. .obsidian/). */
+function walkMarkdown(dir: string): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir)) {
+    if (entry.startsWith(".")) continue;
+    const abs = join(dir, entry);
+    const st = statSync(abs);
+    if (st.isDirectory()) out.push(...walkMarkdown(abs));
+    else if (entry.toLowerCase().endsWith(".md")) out.push(abs);
+  }
+  return out;
 }
 
 try {
@@ -122,6 +144,56 @@ try {
       const agentId = requireAgent(rest[0]);
       if (!office.agents.revoke(agentId)) fail(`agent already revoked: ${agentId}`);
       console.log(`revoked ${agentId} — it can no longer authenticate`);
+      break;
+    }
+    case "library": {
+      const [sub, a, b] = rest;
+      switch (sub) {
+        case "list": {
+          const docs = office.library.list();
+          if (docs.length === 0) console.log("library is empty");
+          for (const d of docs) {
+            console.log(`${d.path}  (${d.byteLen} bytes, ${new Date(d.updatedAt).toISOString()})`);
+          }
+          break;
+        }
+        case "get": {
+          if (!a) fail("library get requires a doc path");
+          const content = office.library.read(a);
+          if (content === undefined) fail(`no such doc: ${a}`);
+          process.stdout.write(content);
+          break;
+        }
+        case "set": {
+          if (!a || !b) fail("library set requires <docPath> <file|->" );
+          office.library.write(a, readContent(b));
+          console.log(`wrote ${a}`);
+          break;
+        }
+        case "rm": {
+          if (!a) fail("library rm requires a doc path");
+          if (!office.library.delete(a)) fail(`no such doc: ${a}`);
+          console.log(`deleted ${a}`);
+          break;
+        }
+        case "sync": {
+          if (!a) fail("library sync requires a vault directory");
+          const files = walkMarkdown(a);
+          if (files.length === 0) fail(`no .md files found under ${a}`);
+          for (const abs of files) {
+            const docPath = relative(a, abs).split(sep).join("/");
+            if (!isValidLibraryPath(docPath)) {
+              console.warn(`skipping (invalid path): ${docPath}`);
+              continue;
+            }
+            office.library.write(docPath, readFileSync(abs, "utf8"));
+            console.log(`synced ${docPath}`);
+          }
+          break;
+        }
+        default:
+          fail(`unknown library command "${sub}" (list|get|set|rm|sync)`);
+      }
       break;
     }
     default:

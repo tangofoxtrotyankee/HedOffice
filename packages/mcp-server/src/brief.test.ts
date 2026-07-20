@@ -34,9 +34,10 @@ function parse(result: any): any {
 }
 
 describe("cubicle.brief + staged permissions over MCP", () => {
-  it("serves the charter, stage and gate policy to the connecting agent", async () => {
+  it("serves the charter, stage, gate policy and library index to the connecting agent", async () => {
     const a = office.registerAgent("Lee.", "observe");
     office.cubicles.charterWrite(a.agentId, "# Lee.\nEscalate, don't improvise.");
+    office.library.write("constitution.md", "# Constitution");
     const client = await connect(a.token);
 
     const brief = parse(await client.callTool({ name: "cubicle.brief", arguments: {} }));
@@ -47,6 +48,34 @@ describe("cubicle.brief + staged permissions over MCP", () => {
     });
     expect(brief.charter).toContain("Escalate");
     expect(brief.gatedTools).toContain("notebook.write");
+    expect(brief.library).toEqual(["constitution.md"]);
+  });
+
+  it("serves governance-library docs read-only, even at observe stage", async () => {
+    const a = office.registerAgent("Lee.", "observe");
+    office.library.write("constitution.md", "# Constitution\nLee. reports to Sam.");
+    office.library.write("decision_trees/user_registered.md", "# Tree");
+    const client = await connect(a.token);
+
+    const list = parse(await client.callTool({ name: "library.list", arguments: {} }));
+    expect(list.docs.map((d: { path: string }) => d.path)).toEqual([
+      "constitution.md",
+      "decision_trees/user_registered.md",
+    ]);
+
+    const doc = parse(
+      await client.callTool({ name: "library.read", arguments: { path: "constitution.md" } }),
+    );
+    expect(doc.content).toContain("reports to Sam");
+
+    const missing = parse(
+      await client.callTool({ name: "library.read", arguments: { path: "nope.md" } }),
+    );
+    expect(missing).toMatchObject({ ok: false, error: "not_found" });
+
+    // No library-write tool is exposed to agents at all.
+    const tools = await client.listTools();
+    expect(tools.tools.map((t) => t.name)).not.toContain("library.write");
   });
 
   it("denies mutating tools for an observe-stage agent but leaves reads open", async () => {

@@ -41,6 +41,17 @@ export const CharterWritten = z.object({
   byteLen: z.number().int().nonnegative(),
 });
 
+/**
+ * The operator wrote/replaced/deleted a doc in the shared governance library
+ * (constitution.md, ethics.md, decision_trees/*, …). `newHash` null = deleted.
+ * Library docs are office-wide, not per-cubicle: `agentId` is "office".
+ */
+export const LibraryWritten = z.object({
+  path: z.string(),
+  newHash: z.string().nullable(),
+  byteLen: z.number().int().nonnegative(),
+});
+
 export const NotebookWritten = z.object({
   agentId: Id,
   prevHash: z.string().nullable(),
@@ -118,6 +129,7 @@ export const EventBody = z.discriminatedUnion("type", [
   z.object({ type: z.literal("agent.revoked"), payload: AgentRevoked }),
   z.object({ type: z.literal("agent.stage_changed"), payload: AgentStageChanged }),
   z.object({ type: z.literal("charter.written"), payload: CharterWritten }),
+  z.object({ type: z.literal("library.written"), payload: LibraryWritten }),
   z.object({ type: z.literal("presence.changed"), payload: PresenceChanged }),
   z.object({ type: z.literal("notebook.written"), payload: NotebookWritten }),
   z.object({ type: z.literal("task.created"), payload: TaskCreated }),

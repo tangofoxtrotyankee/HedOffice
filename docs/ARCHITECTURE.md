@@ -166,7 +166,12 @@ sentence chunk — rather than waiting for the full response.
 - `cubicle.status()` → optional, lets the agent read its own presence/task summary.
 - `cubicle.brief()` → the agent's onboarding read: its operator-authored
   **charter** (role/boundaries doc, `charter.written` events), its permission
-  stage, and how the gated tools behave (docs/INTEGRATION.md).
+  stage, how the gated tools behave, and the governance-library index
+  (docs/INTEGRATION.md).
+- `library.list()` / `library.read({ path })` → the shared **governance
+  library**: operator-authored, path-addressed markdown (constitution, ethics,
+  authority limits, decision trees, process docs; `library.written` events).
+  Read-only for agents — there is no library-write tool.
 
 > **Presence is NOT a tool — it is inferred.** There is deliberately **no
 > `presence.set`**.

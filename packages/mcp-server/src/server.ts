@@ -53,7 +53,8 @@ export class HedOfficeServer {
   constructor(private readonly opts: HedOfficeServerOptions = {}) {
     this.office = opts.office ?? new Office();
     this.app = express();
-    this.app.use(express.json());
+    // 2mb: room for large charters/notebook payloads; still a sane abuse cap.
+    this.app.use(express.json({ limit: "2mb" }));
     this.app.post("/mcp", (req, res) => void this.handlePost(req, res));
     this.app.get("/mcp", (req, res) => void this.handleSessionRequest(req, res));
     this.app.delete("/mcp", (req, res) => void this.handleSessionRequest(req, res));

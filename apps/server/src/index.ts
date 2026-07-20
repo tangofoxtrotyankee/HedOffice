@@ -6,11 +6,13 @@ import { bootHedOffice } from "./boot.js";
  * registers a demo agent so a remote BYO agent can connect immediately.
  *
  * Env:
- * - `HEDOFFICE_DB`          — SQLite path (mounted volume) for persistence.
- * - `HEDOFFICE_ADMIN_TOKEN` — enables `/admin/agents…` (register/revoke/stage/
- *   charter) guarded by this bearer token. Without it, use the local CLI
- *   (`pnpm --filter @hedoffice/server agents …`) against the same DB.
- * - `HEDOFFICE_DEMO_AGENT`  — set to `0` to never seed the demo agent.
+ * - `HEDOFFICE_DB`             — SQLite path (mounted volume) for persistence.
+ * - `HEDOFFICE_AGENT_TOKEN_<KEY>` (+ optional `…_NAME_<KEY>`, `…_STAGE_<KEY>`)
+ *   — provision agents and their bearer secrets from Railway Variables
+ *   (env-agents.ts). The ONLY way secrets enter a deployment.
+ * - `HEDOFFICE_ADMIN_TOKEN`    — enables the secret-free admin API
+ *   (`/admin/agents…`: list/stage/charter/revoke) guarded by this bearer token.
+ * - `HEDOFFICE_DEMO_AGENT`     — set to `0` to never seed the demo agent.
  *
  * NOTE: cloud deploy is a *later* option (the master plan ships local-first). A
  * publicly exposed office means untrusted agents can reach its tools — keep the
@@ -19,7 +21,7 @@ import { bootHedOffice } from "./boot.js";
 const port = Number(process.env.PORT ?? 4317);
 const host = process.env.HOST ?? "0.0.0.0";
 
-const { server, office, demoToken } = bootHedOffice({
+const { server, office, demoToken, seededAgents } = bootHedOffice({
   demoAgent: process.env.HEDOFFICE_DEMO_AGENT !== "0",
   location: process.env.HEDOFFICE_DB,
   adminToken: process.env.HEDOFFICE_ADMIN_TOKEN,
@@ -33,6 +35,13 @@ server
     console.log(`  mcp:      POST /mcp   (Streamable HTTP)`);
     if (process.env.HEDOFFICE_ADMIN_TOKEN) {
       console.log(`  admin:    /admin/agents (bearer: HEDOFFICE_ADMIN_TOKEN)`);
+    }
+    if (seededAgents.length > 0) {
+      console.log(
+        `  env-seeded agents: ${seededAgents
+          .map((a) => `${a.name} (${a.stage}${a.created ? ", new" : ""})`)
+          .join(", ")}`,
+      );
     }
     if (demoToken) console.log(`  demo agent bearer token: ${demoToken}`);
     const agents = office.agents.list();

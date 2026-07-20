@@ -14,7 +14,7 @@ afterEach(async () => {
 const ADMIN = "test-admin-token";
 
 async function boot(opts: Parameters<typeof bootHedOffice>[0] = {}): Promise<void> {
-  booted = bootHedOffice({ adminToken: ADMIN, ...opts });
+  booted = bootHedOffice({ adminToken: ADMIN, env: {}, ...opts });
   port = await booted.server.listen(0);
 }
 
@@ -29,7 +29,7 @@ function admin(path: string, init: RequestInit = {}): Promise<Response> {
   });
 }
 
-describe("admin API (operator agent management)", () => {
+describe("admin API (operator agent management — secret-free)", () => {
   it("rejects requests without the admin token", async () => {
     await boot();
     const res = await fetch(`http://127.0.0.1:${port}/admin/agents`);
@@ -40,26 +40,28 @@ describe("admin API (operator agent management)", () => {
     expect(bad.status).toBe(401);
   });
 
-  it("registers an agent (observe by default), lists it, and the token authenticates", async () => {
+  it("exposes NO route that mints or returns a token", async () => {
     await boot();
-    const created = await admin("/admin/agents", {
+    const { agentId } = booted!.office.registerAgent("Lee.");
+    // Registration and rotation must not exist over HTTP.
+    const register = await admin("/admin/agents", {
       method: "POST",
-      body: JSON.stringify({ name: "Lee." }),
-    }).then((r) => r.json());
-    expect(created).toMatchObject({ name: "Lee.", stage: "observe" });
-    expect(created.token).toBeTruthy();
-    expect(booted!.office.agents.resolveToken(created.token)).toBe(created.agentId);
+      body: JSON.stringify({ name: "Mallory." }),
+    });
+    expect(register.status).toBe(404);
+    const rotate = await admin(`/admin/agents/${agentId}/rotate`, { method: "POST" });
+    expect(rotate.status).toBe(404);
+    // And the list payload never contains token material.
+    const list = await admin("/admin/agents").then((r) => r.json());
+    expect(JSON.stringify(list)).not.toMatch(/token/i);
+  });
+
+  it("lists agents and manages stage, charter and revoke over HTTP", async () => {
+    await boot();
+    const { agentId, token } = booted!.office.registerAgent("Lee.", "observe");
 
     const list = await admin("/admin/agents").then((r) => r.json());
     expect(list.agents.map((a: { name: string }) => a.name)).toContain("Lee.");
-  });
-
-  it("stages, writes a charter, rotates and revokes over HTTP", async () => {
-    await boot();
-    const { agentId, token } = await admin("/admin/agents", {
-      method: "POST",
-      body: JSON.stringify({ name: "Lee.", stage: "observe" }),
-    }).then((r) => r.json());
 
     const staged = await admin(`/admin/agents/${agentId}/stage`, {
       method: "POST",
@@ -76,19 +78,57 @@ describe("admin API (operator agent management)", () => {
     const read = await admin(`/admin/agents/${agentId}/charter`).then((r) => r.json());
     expect(read.charter).toBe(charter);
 
-    const rotated = await admin(`/admin/agents/${agentId}/rotate`, { method: "POST" }).then((r) =>
-      r.json(),
-    );
-    expect(booted!.office.agents.resolveToken(token)).toBeUndefined();
-    expect(booted!.office.agents.resolveToken(rotated.token)).toBe(agentId);
-
     const revoked = await admin(`/admin/agents/${agentId}/revoke`, { method: "POST" });
     expect(revoked.status).toBe(200);
-    expect(booted!.office.agents.resolveToken(rotated.token)).toBeUndefined();
+    expect(booted!.office.agents.resolveToken(token)).toBeUndefined();
+  });
+
+  it("accepts a ~1 MB charter (json body limit is raised above the 100 kb default)", async () => {
+    await boot();
+    const { agentId } = booted!.office.registerAgent("Lee.");
+
+    const bigCharter = "# Lee.\n" + "governance line\n".repeat(65_000); // ~1 MB
+    const put = await admin(`/admin/agents/${agentId}/charter`, {
+      method: "PUT",
+      body: JSON.stringify({ content: bigCharter }),
+    });
+    expect(put.status).toBe(200);
+    expect(booted!.office.cubicles.charterRead(agentId)).toBe(bigCharter);
+  });
+
+  it("manages the governance library over HTTP (list/get/put/delete)", async () => {
+    await boot();
+    const put = await admin("/admin/library/decision_trees/user_registered.md", {
+      method: "PUT",
+      body: JSON.stringify({ content: "# user.registered\nIf no payment: log lead." }),
+    });
+    expect(put.status).toBe(200);
+
+    const list = await admin("/admin/library").then((r) => r.json());
+    expect(list.docs.map((d: { path: string }) => d.path)).toEqual([
+      "decision_trees/user_registered.md",
+    ]);
+
+    const got = await admin("/admin/library/decision_trees/user_registered.md").then((r) =>
+      r.json(),
+    );
+    expect(got.content).toContain("log lead");
+
+    const bad = await admin("/admin/library/..%2Fetc", {
+      method: "PUT",
+      body: JSON.stringify({ content: "x" }),
+    });
+    expect(bad.status).toBe(400);
+
+    const del = await admin("/admin/library/decision_trees/user_registered.md", {
+      method: "DELETE",
+    });
+    expect(del.status).toBe(200);
+    expect(booted!.office.library.list()).toHaveLength(0);
   });
 
   it("does not expose /admin routes when no admin token is configured", async () => {
-    booted = bootHedOffice(); // no adminToken
+    booted = bootHedOffice({ env: {} }); // no adminToken
     port = await booted.server.listen(0);
     const res = await fetch(`http://127.0.0.1:${port}/admin/agents`, {
       headers: { Authorization: `Bearer ${ADMIN}` },
@@ -99,13 +139,13 @@ describe("admin API (operator agent management)", () => {
   it("seeds the demo agent only into an empty registry (no re-seed on restart)", async () => {
     const db = join(tmpdir(), `hedoffice-test-${process.pid}-${Date.now()}.sqlite`);
     try {
-      const first = bootHedOffice({ demoAgent: true, location: db });
+      const first = bootHedOffice({ demoAgent: true, location: db, env: {} });
       expect(first.demoToken).toBeTruthy();
       expect(first.office.agents.list()).toHaveLength(1);
       await first.server.close();
 
       // "Restart" on the same persistent DB: no second demo identity.
-      const second = bootHedOffice({ demoAgent: true, location: db });
+      const second = bootHedOffice({ demoAgent: true, location: db, env: {} });
       expect(second.demoToken).toBeUndefined();
       expect(second.office.agents.list()).toHaveLength(1);
       await second.server.close();

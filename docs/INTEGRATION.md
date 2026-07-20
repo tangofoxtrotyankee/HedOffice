@@ -33,32 +33,72 @@ This prints the `agentId` and the bearer token **once** — only the token's
 SHA-256 hash is stored. Other commands: `list`, `stage`, `charter`, `rotate`,
 `revoke` (`agents help` for usage).
 
-**Remotely, via the admin API** — set `HEDOFFICE_ADMIN_TOKEN` on the server
-(this enables `/admin/agents…`, guarded by that bearer token; without the env
-var the admin surface does not exist):
+**On a cloud deploy (Railway), via environment variables** — secrets live in
+Railway Variables only; **no HTTP route can create or return a token**. Declare
+the agent as variables and (re)deploy:
+
+```
+HEDOFFICE_AGENT_TOKEN_LEE = <openssl rand -hex 32>   # the bearer secret
+HEDOFFICE_AGENT_NAME_LEE  = Lee.
+HEDOFFICE_AGENT_STAGE_LEE = observe
+```
+
+Seeding is idempotent by name; rotating = change the token variable and
+redeploy (identity and history are preserved). See
+[DEPLOY.md](DEPLOY.md) for the full runbook.
+
+The optional admin API (`HEDOFFICE_ADMIN_TOKEN` enables `/admin/agents…`) is
+**secret-free** — it covers the non-secret lifecycle only:
 
 ```sh
-curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: application/json" \
-  -d '{"name":"Lee.","stage":"observe"}' https://<host>/admin/agents
-# → { agentId, name, stage, token }   ← token shown once
-
-# stage / charter / rotate / revoke:
+curl -H "Authorization: Bearer $ADMIN_TOKEN" https://<host>/admin/agents   # list
 curl -X POST … /admin/agents/<agentId>/stage    -d '{"stage":"supervised"}'
 curl -X PUT  … /admin/agents/<agentId>/charter  -d '{"content":"# Lee.\n…"}'
-curl -X POST … /admin/agents/<agentId>/rotate
 curl -X POST … /admin/agents/<agentId>/revoke   # kill switch
 ```
 
 The admin token is the **operator's** key. Never give it to an agent; agents
 get only their own per-agent token.
 
-## 2. Write the charter
+## 2. Write the charter and the governance library
 
-The charter is the operator-authored role document the agent reads through the
-`cubicle.brief` tool on connect — role, responsibilities, boundaries,
-escalation rules. Start from
+Two document layers govern an agent, mirroring the Agents-division model
+(company rules vs. per-agent job descriptions):
+
+**The charter (per-agent "job description").** The operator-authored role
+document the agent reads through `cubicle.brief` on connect — role,
+responsibilities, boundaries, escalation rules. Start from
 [templates/AGENT_CHARTER.md](templates/AGENT_CHARTER.md). Keep it short,
 imperative, and honest about what the agent may *not* do.
+
+**The governance library (office-wide "vault").** Shared, path-addressed
+markdown docs — `constitution.md`, `ethics.md`, `authority_limits.md`,
+`escalation_rules.md`, `decision_trees/*.md`, process docs — stored in the
+event-sourced office store, listable/readable by every agent via the
+`library.list` / `library.read` tools, and **writable only by the operator**
+(agents have no library-write tool at any stage). Every change is a
+`library.written` event with a content hash, so the audit log is the change
+history. Starter templates: [templates/library/](templates/library/).
+
+Edit and publish it like an Obsidian vault — keep a local folder of markdown
+(open it in Obsidian if you like) and sync it:
+
+```sh
+# local (works while the server runs):
+HEDOFFICE_DB=./office.sqlite pnpm --filter @hedoffice/server agents \
+  library sync ./vault            # pushes every .md, preserving subfolders
+# other commands: library list | get <path> | set <path> <file|-> | rm <path>
+
+# cloud (Railway), via the secret-free admin API:
+for f in $(cd vault && find . -name '*.md' | sed 's|^\./||'); do
+  curl -X PUT -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: application/json" \
+    -d "$(jq -n --rawfile c "vault/$f" '{content:$c}')" \
+    "https://<host>/admin/library/$f"
+done
+```
+
+Agents are told in their brief to read the library — the constitution and
+process docs bind them alongside their charter.
 
 ## 3. Point the agent at HedOffice
 

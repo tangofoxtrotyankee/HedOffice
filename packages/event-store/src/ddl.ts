@@ -65,6 +65,14 @@ CREATE TABLE IF NOT EXISTS charters (
   updated_at INTEGER NOT NULL
 );
 
+-- Shared governance library: operator-authored, path-addressed markdown docs
+-- (constitution.md, ethics.md, decision_trees/*, …) readable by every agent.
+CREATE TABLE IF NOT EXISTS library_docs (
+  path       TEXT PRIMARY KEY,
+  content    TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS presence (
   agent_id      TEXT PRIMARY KEY,
   status        TEXT NOT NULL,
