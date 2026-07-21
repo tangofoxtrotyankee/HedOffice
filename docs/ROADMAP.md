@@ -150,6 +150,11 @@ System. Runs in the browser via Vite; the shell wraps it at Phase 5.
 Threat-model pass, secret-storage audit, tool-permission gates, packaging
 (installers), docs, GitHub open-source release.
 
+> **Superseded/expanded:** Phase 5's full requirement set (R5.1–R5.6), testing
+> plan (including three new adversarial harness proofs) and exit gate now live
+> in **[ROADMAP_PHASES_5-10.md](ROADMAP_PHASES_5-10.md)**, which extends this
+> roadmap through Phase 10. The checklist below remains as the running status.
+
 - [x] **Desktop shell — Electron** (ADR-005 locked): main process runs core + MCP
   server, exposes read-models to a sandboxed renderer over a typed IPC contract;
   `electron:dev` launch path. (`apps/desktop/electron/`)
@@ -170,6 +175,25 @@ Threat-model pass, secret-storage audit, tool-permission gates, packaging
 desktop/display, so they're built here and verified on a developer machine.)*
 
 ---
+
+## Phases 6–10 — From pre-alpha to the AI-native business
+
+Defined in full in **[ROADMAP_PHASES_5-10.md](ROADMAP_PHASES_5-10.md)**
+(requirements, testing, exit gates, build prompts). In brief:
+
+- **Phase 6 — Company Library:** the governance library formalised — fixed
+  layout, `charters/self`, hash manifest, `library.updated` / `library.proposal`
+  event flow.
+- **Phase 7 — Staged Permissions Enforcement:** the five-stage ladder
+  (Observe → Draft → Recommend → Queue → Execute) enforced server-side per tool
+  call; migrates the current `observe`/`supervised`/`autonomous` stages.
+- **Phase 8 — Inter-Cubicle Routing:** thin v2 slice — point-to-point typed
+  routes, inboxes, handoffs, thread view; no rooms, no broadcast.
+- **Phase 9 — External Event Intake:** HMAC-verified webhooks (LeadLocator,
+  Stripe, email) normalised into the log and routed by MD-owned decision trees,
+  quarantined as untrusted content.
+- **Phase 10 — Division Pilot:** 30 days of real workflows, promotion by
+  evidence, weekly ops review, written verdict.
 
 ## Benchmark gates (these change the plan)
 

@@ -14,7 +14,9 @@ A virtual workplace for your AI Agents.
 > `… voice-loop` / `… integration`, and
 > `pnpm --filter @hedoffice/desktop preview-floor` / `… preview-walkin` /
 > `… preview-rooms` (or `dev` for the live UI). See
-> [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> [`docs/ROADMAP.md`](docs/ROADMAP.md). The roadmap now extends through
+> **Phase 10** — see
+> [`docs/ROADMAP_PHASES_5-10.md`](docs/ROADMAP_PHASES_5-10.md).
 
 ## What is HedOffice?
 
@@ -59,6 +61,7 @@ multi-agent layer is mostly routing pre-existing events**, not a re-architecture
 ## Documentation
 
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — phased build plan with deliverables and exit-gates
+- [`docs/ROADMAP_PHASES_5-10.md`](docs/ROADMAP_PHASES_5-10.md) — Phases 5–10: hardening → Company Library → staged permissions → inter-cubicle routing → external intake → division pilot
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — components, data model, event schema, tools, presence
 - [`docs/DESIGN.md`](docs/DESIGN.md) — the visual design system ("warm mission-control TUI"): palette, type, box-drawing layout, presence glyphs, tokens
 - [`docs/INTEGRATION.md`](docs/INTEGRATION.md) — linking a BYO (Hermes/OpenClaw-style) agent: registration, charters, staged permissions, the `hermes-link` check
