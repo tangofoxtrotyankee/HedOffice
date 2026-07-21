@@ -33,6 +33,14 @@ function denied(tool: string): ToolResult {
   };
 }
 
+/** A tool call refused before it ran (revoked agent, suspended cubicle, kill switch). */
+function refused(error: string, tool: string): ToolResult {
+  return {
+    content: [{ type: "text", text: JSON.stringify({ ok: false, error, tool }) }],
+    isError: true,
+  };
+}
+
 /**
  * Wraps a tool handler so every call (a) routes mutating tools through the
  * human approval gate (docs/SECURITY.md), (b) is reflected in inferred presence
@@ -46,6 +54,13 @@ async function tracked(
   args: unknown,
   run: () => ToolResult | Promise<ToolResult>,
 ): Promise<ToolResult> {
+  // Gate the whole call before it touches state or the log (fail closed).
+  // These reflect operator/kill-switch state held in the shared event log, so
+  // they hold even when the CLI in another process flipped them (F5, R5.6).
+  if (office.control.isKilled()) return refused("office_killed", tool);
+  if (!office.agents.isActive(agentId)) return refused("agent_revoked", tool);
+  if (office.control.isSuspended(agentId)) return refused("cubicle_suspended", tool);
+
   const callId = randomUUID();
   const start = Date.now();
   office.presence.callStart(agentId);

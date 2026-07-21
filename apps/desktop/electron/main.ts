@@ -29,8 +29,12 @@ async function bootstrap(): Promise<void> {
     win?.webContents.send(IPC.approvalRequest, req),
   );
 
+  // No defaultPolicy: leaving it unset lets the Office wire per-agent stage
+  // lookup (observe→deny, supervised→prompt, autonomous→auto) so the desktop
+  // honours each agent's staged permissions instead of forcing one policy
+  // (docs/SECURITY.md F2). `supervised` (prompt) remains the effective default.
   const office = new Office({
-    approval: { defaultPolicy: "prompt", approver: approvals.approver },
+    approval: { approver: approvals.approver },
     onPresenceChange: () => win?.webContents.send(IPC.update),
   });
   const server = new HedOfficeServer({ office });
@@ -55,6 +59,10 @@ async function bootstrap(): Promise<void> {
       preload: join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
+      // Pin the renderer sandbox explicitly rather than relying on the Electron
+      // default (docs/SECURITY.md F17). A sandboxed renderer cannot reach Node
+      // even if contextIsolation were misconfigured.
+      sandbox: true,
     },
   });
 

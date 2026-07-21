@@ -26,6 +26,17 @@ export interface BootOptions {
    * auto-denied (an unattended cloud deploy must not wedge agents forever).
    */
   approvalTimeoutMs?: number;
+  /**
+   * Allowed HTTP Origins for the hosted deploy (docs/SECURITY.md F14). When set,
+   * DNS-rebinding protection is re-enabled and browser requests with a
+   * present-but-unlisted Origin get 403. Non-browser MCP clients send no Origin
+   * and are unaffected. Empty/unset keeps the proxy-friendly default (off).
+   */
+  allowedOrigins?: string[];
+  /** Per-request bearer re-check on every MCP request (R5.2 / F13). */
+  requireToken?: boolean;
+  /** Idle session expiry in ms (R5.2 / F11); default 30 min. */
+  idleTimeoutMs?: number;
 }
 
 export interface Booted {
@@ -61,7 +72,18 @@ export function bootHedOffice(opts: BootOptions = {}): Booted {
       for (const listener of updateListeners) listener();
     },
   });
-  const server = new HedOfficeServer({ office, enableDnsRebindingProtection: false });
+  // With an Origin allowlist configured we can safely re-enable DNS-rebinding
+  // protection (browser Origin is checked); without one, keep it off so the
+  // public Host header behind the proxy isn't rejected (protection then rests
+  // on the per-agent bearer token).
+  const hasOrigins = (opts.allowedOrigins?.length ?? 0) > 0;
+  const server = new HedOfficeServer({
+    office,
+    enableDnsRebindingProtection: hasOrigins,
+    ...(hasOrigins && { allowedOrigins: opts.allowedOrigins }),
+    requireToken: opts.requireToken ?? false,
+    ...(opts.idleTimeoutMs !== undefined && { idleTimeoutMs: opts.idleTimeoutMs }),
+  });
 
   let bridge: ApprovalBridge | undefined;
   let uiRoot: string | undefined;

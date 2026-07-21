@@ -2,6 +2,7 @@ import { EventStore } from "@hedoffice/event-store";
 import { AgentRegistry } from "./agents.js";
 import { ApprovalGate, type Approver } from "./approvals.js";
 import { ChannelService } from "./channel.js";
+import { OfficeControl } from "./control.js";
 import { CubicleState } from "./cubicle.js";
 import { LibraryStore } from "./library.js";
 import { PresenceEngine, type PresenceSnapshot } from "./presence.js";
@@ -31,6 +32,7 @@ export class Office {
   readonly channel: ChannelService;
   readonly approvals: ApprovalGate;
   readonly library: LibraryStore;
+  readonly control: OfficeControl;
 
   constructor(opts: OfficeOptions = {}) {
     this.store = new EventStore(opts.location);
@@ -39,6 +41,7 @@ export class Office {
     this.presence = new PresenceEngine(this.store, opts.onPresenceChange);
     this.channel = new ChannelService(this.store, this.presence);
     this.library = new LibraryStore(this.store);
+    this.control = new OfficeControl(this.store);
     this.approvals = new ApprovalGate(this.store, this.presence, {
       // The agent's staged-permission level drives the default gate policy
       // (observe → deny, supervised → prompt, autonomous → auto) unless the

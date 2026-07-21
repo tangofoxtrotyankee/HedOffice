@@ -9,6 +9,7 @@ import {
   type Office,
 } from "@hedoffice/core";
 import { ApprovalDecision } from "@hedoffice/schema";
+import { safeEqual } from "./auth.js";
 
 /**
  * The operator web-UI API: what the browser renderer (served statically at `/`)
@@ -81,7 +82,7 @@ export function attachUiApi(
     const h = req.headers.authorization;
     const header = typeof h === "string" && h.startsWith("Bearer ") ? h.slice(7) : undefined;
     const query = typeof req.query.token === "string" ? req.query.token : undefined;
-    if ((header ?? query) !== adminToken) {
+    if (!safeEqual(header ?? query, adminToken)) {
       office.store.append({
         agentId: "admin",
         streamId: "security",

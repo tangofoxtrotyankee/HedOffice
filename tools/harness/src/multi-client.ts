@@ -47,9 +47,12 @@ async function main(): Promise<void> {
   const port = await server.listen(0);
   log("server", `listening on http://127.0.0.1:${port}/mcp`);
 
-  // Register N agents and connect them concurrently.
+  // Register N agents and connect them concurrently. Autonomous stage: this
+  // harness proves isolation/routing/presence, not the approval gate, so the
+  // agents' mutating tools run without a human approver (the gate is fail-closed
+  // for `supervised` agents with no approver — docs/SECURITY.md F1).
   const agents = Array.from({ length: N }, (_, i) =>
-    office.registerAgent(NAMES[i % NAMES.length] ?? `Agent${i}`),
+    office.registerAgent(NAMES[i % NAMES.length] ?? `Agent${i}`, "autonomous"),
   );
   const conns = await Promise.all(agents.map((a) => connect(port, a.token)));
   log("connect", `${server.sessionCount} sessions established`);

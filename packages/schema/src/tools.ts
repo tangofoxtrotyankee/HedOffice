@@ -7,22 +7,32 @@ import { Id, TaskStatus } from "./primitives.js";
  * event log share one source of truth.
  *
  * Presence is intentionally absent: it is inferred, never set (ADR-003).
+ *
+ * Every free-text field is length-capped (docs/SECURITY.md, F3): the transport
+ * caps the whole body at 2 MB, but a single agent must not be able to write a
+ * 2 MB notebook or flood the log with oversized payloads, so each field also
+ * fails closed at a sane per-field ceiling. Caps are character lengths (a UTF-8
+ * byte is ≥1 char), comfortably above any legitimate use.
  */
+export const MAX_NOTEBOOK_CHARS = 200_000;
+export const MAX_TEXT_CHARS = 20_000;
+export const MAX_TITLE_CHARS = 4_000;
+export const MAX_SAY_CHARS = 10_000;
 
 // notebook.*
 export const NotebookReadInput = z.object({});
-export const NotebookWriteInput = z.object({ content: z.string() });
-export const NotebookAppendInput = z.object({ text: z.string() });
+export const NotebookWriteInput = z.object({ content: z.string().max(MAX_NOTEBOOK_CHARS) });
+export const NotebookAppendInput = z.object({ text: z.string().max(MAX_TEXT_CHARS) });
 
 // task.*
 export const TaskCreateInput = z.object({
-  title: z.string().min(1),
-  detail: z.string().optional(),
+  title: z.string().min(1).max(MAX_TITLE_CHARS),
+  detail: z.string().max(MAX_TEXT_CHARS).optional(),
 });
 export const TaskUpdateInput = z.object({
   taskId: Id,
   status: TaskStatus.optional(),
-  detail: z.string().optional(),
+  detail: z.string().max(MAX_TEXT_CHARS).optional(),
 });
 export const TaskListInput = z.object({});
 
@@ -34,7 +44,7 @@ export const ChannelListenInput = z.object({
   waitMs: z.number().int().nonnegative().optional(),
 });
 export const ChannelSayInput = z.object({
-  text: z.string().min(1),
+  text: z.string().min(1).max(MAX_SAY_CHARS),
   voiceId: z.string().optional(),
 });
 

@@ -156,4 +156,16 @@ export class AgentRegistry {
       .get(agentId);
     return row !== undefined;
   }
+
+  /**
+   * Whether an agent can still authenticate — i.e. registered and not revoked.
+   * A single-row check (cheaper than `get`), suitable for the per-tool-call
+   * guard that stops a revoked agent's still-open session from acting (F5).
+   */
+  isActive(agentId: string): boolean {
+    const row = this.store.db
+      .prepare(`SELECT token_hash AS tokenHash FROM agents WHERE agent_id = ?`)
+      .get(agentId) as { tokenHash: string | null } | undefined;
+    return row !== undefined && row.tokenHash !== null;
+  }
 }

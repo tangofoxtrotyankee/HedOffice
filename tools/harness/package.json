@@ -11,6 +11,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "voice-loop": "tsx src/voice-loop.ts",
     "integration": "tsx src/integration.ts",
+    "security": "tsx src/security.ts",
     "floor-view": "tsx src/floor-view.ts"
   },
   "dependencies": {

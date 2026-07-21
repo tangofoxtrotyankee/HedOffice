@@ -45,15 +45,22 @@ const dbPath = takeFlag(argv, "--db") ?? process.env.HEDOFFICE_DB;
 const [command, ...rest] = argv;
 
 if (!command || command === "help" || command === "--help") {
-  console.log(`usage: hedoffice-agents <add|list|stage|charter|rotate|revoke> …
+  console.log(`usage: hedoffice-agents <add|list|stage|charter|rotate|revoke|kill|restore|suspend|resume> …
   add <name> [--stage observe|supervised|autonomous] [--charter <path.md>]
   list
   stage <agentId> <observe|supervised|autonomous>
   charter <agentId> <path.md | -stdin->
   rotate <agentId>
   revoke <agentId>
+  kill [reason]                 engage the global kill switch (refuse new + reject calls)
+  restore [reason]              lift the global kill switch
+  suspend <agentId> [reason]    freeze one cubicle's tool calls
+  resume  <agentId> [reason]    unfreeze a cubicle
   library list | get <docPath> | set <docPath> <file|-> | rm <docPath> | sync <vaultDir>
-DB: --db <path> or HEDOFFICE_DB env (must be the server's SQLite file).`);
+DB: --db <path> or HEDOFFICE_DB env (must be the server's SQLite file).
+Note: kill/suspend from the CLI write to the shared log; a running server picks
+them up on the next connection/tool call. Use the /admin endpoints to also drop
+open sockets instantly.`);
   process.exit(0);
 }
 
@@ -144,6 +151,32 @@ try {
       const agentId = requireAgent(rest[0]);
       if (!office.agents.revoke(agentId)) fail(`agent already revoked: ${agentId}`);
       console.log(`revoked ${agentId} — it can no longer authenticate`);
+      break;
+    }
+    case "kill": {
+      const reason = rest.join(" ") || "cli kill";
+      office.control.killAll(reason);
+      console.log(`kill switch ENGAGED (${reason}) — new connections refused, tool calls rejected`);
+      break;
+    }
+    case "restore": {
+      const reason = rest.join(" ") || "cli restore";
+      office.control.liftKill(reason);
+      console.log(`kill switch lifted (${reason}) — connections allowed again`);
+      break;
+    }
+    case "suspend": {
+      const agentId = requireAgent(rest[0]);
+      const reason = rest.slice(1).join(" ") || "cli suspend";
+      office.control.suspend(agentId, reason);
+      console.log(`suspended ${agentId} (${reason}) — its tool calls are now refused`);
+      break;
+    }
+    case "resume": {
+      const agentId = requireAgent(rest[0]);
+      const reason = rest.slice(1).join(" ") || "cli resume";
+      office.control.resume(agentId, reason);
+      console.log(`resumed ${agentId} (${reason})`);
       break;
     }
     case "library": {

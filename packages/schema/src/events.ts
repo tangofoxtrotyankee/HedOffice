@@ -120,6 +120,38 @@ export const AuditSecurityEvent = z.object({
   detail: z.string(),
 });
 
+/**
+ * A refused, security-relevant action (Phase 5). Distinct from
+ * `audit.security_event` (informational): a `security.violation` is something
+ * that was *blocked* — a session-id replay from a new origin, a failed
+ * per-request token re-check, or a fail-closed approval with no approver. In
+ * Phase 7 a violation auto-demotes the offending agent. `origin` is the HTTP
+ * Origin implicated, or null when not applicable.
+ */
+export const SecurityViolation = z.object({
+  agentId: Id,
+  kind: z.string(),
+  detail: z.string(),
+  origin: z.string().nullable(),
+});
+
+/**
+ * The global kill switch was engaged or lifted (Phase 5, R5.6). `active` true =
+ * all sessions revoked and new connections refused; false = the office was
+ * brought back online. `sessionsClosed` is how many live sessions this action
+ * force-disconnected.
+ */
+export const SystemKillswitch = z.object({
+  reason: z.string(),
+  active: z.boolean(),
+  sessionsClosed: z.number().int().nonnegative(),
+});
+
+/** A single cubicle was frozen: its agent's tool calls are refused until resumed. */
+export const CubicleSuspend = z.object({ agentId: Id, reason: z.string() });
+/** A previously-suspended cubicle was unfrozen. */
+export const CubicleResume = z.object({ agentId: Id, reason: z.string() });
+
 // --- Discriminated union of (type, payload) ----------------------------------
 
 export const EventBody = z.discriminatedUnion("type", [
@@ -142,6 +174,10 @@ export const EventBody = z.discriminatedUnion("type", [
   z.object({ type: z.literal("approval.resolved"), payload: ApprovalResolved }),
   z.object({ type: z.literal("cost.recorded"), payload: CostRecorded }),
   z.object({ type: z.literal("audit.security_event"), payload: AuditSecurityEvent }),
+  z.object({ type: z.literal("security.violation"), payload: SecurityViolation }),
+  z.object({ type: z.literal("system.killswitch"), payload: SystemKillswitch }),
+  z.object({ type: z.literal("cubicle.suspend"), payload: CubicleSuspend }),
+  z.object({ type: z.literal("cubicle.resume"), payload: CubicleResume }),
 ]);
 export type EventBody = z.infer<typeof EventBody>;
 

@@ -19,10 +19,11 @@ orchestration core + the stateful Streamable HTTP MCP server, bound to
   SSE events) — guarded by `HEDOFFICE_ADMIN_TOKEN`
 - `/admin/*` → the secret-free admin API
 
-On first boot into an **empty registry** it registers a `demo` agent and logs
-its bearer token so you can connect an agent immediately (a restart on a
-persistent DB never re-seeds it; set `HEDOFFICE_DEMO_AGENT=0` to disable
-entirely). For real agents, register named identities instead — see
+The demo agent is **opt-in** (docs/SECURITY.md F8): set `HEDOFFICE_DEMO_AGENT=1`
+and, into an **empty registry** only, boot registers a `demo` agent and logs its
+bearer token so you can connect immediately (a restart on a persistent DB never
+re-seeds it). Leave it unset in any real deploy — the token would otherwise land
+in your deploy logs. For real agents, register named identities instead — see
 [INTEGRATION.md](INTEGRATION.md) (CLI locally, or the `/admin/agents…` API
 below on a deployed instance).
 
@@ -82,16 +83,23 @@ loudly, and the health check keeps traffic off a misconfigured deploy.
 3. **Set the Variables** (service → *Variables*):
    ```
    HEDOFFICE_DB              = /data/office.sqlite
-   HEDOFFICE_DEMO_AGENT      = 0
    HEDOFFICE_AGENT_TOKEN_LEE = <openssl rand -hex 32>
    HEDOFFICE_AGENT_NAME_LEE  = Lee.
    HEDOFFICE_AGENT_STAGE_LEE = observe
    HEDOFFICE_ADMIN_TOKEN     = <openssl rand -hex 32>   # optional: enables the
                                                         # secret-free admin API
+                                                        # + /admin/killswitch
+   HEDOFFICE_ALLOWED_ORIGINS = https://<app>.up.railway.app  # F14: re-enables
+                                                        # DNS-rebinding checks
+   HEDOFFICE_REQUIRE_TOKEN   = 1     # F13: re-check the bearer on every request
+   HEDOFFICE_SESSION_IDLE_MS = 1800000   # F11: idle expiry (default 30 min)
+   # HEDOFFICE_DEMO_AGENT    = 1     # opt-in demo agent; omit in real deploys
    ```
    Generate each secret locally (`openssl rand -hex 32`) and paste it in.
    Railway Variables are the single home for secrets — never commit them, and
-   nothing in HedOffice will ever echo them back over HTTP.
+   nothing in HedOffice will ever echo them back over HTTP. Do **not** ship a
+   plaintext `.env`/`secrets.json` in the image: the server refuses to boot if it
+   finds one (docs/SECURITY.md R5.3).
 4. **Keep it at 1 replica** (Railway's default). MCP sessions live in the
    server process and the store is a single SQLite file — multiple replicas
    would split sessions across processes and break request routing. Scale
@@ -164,11 +172,20 @@ Env var reference:
 - `HEDOFFICE_AGENT_TOKEN_<KEY>` / `…_NAME_<KEY>` / `…_STAGE_<KEY>` — agent
   provisioning (see above). The only way agent secrets enter the system.
 - `HEDOFFICE_ADMIN_TOKEN` — enables the **secret-free** operator admin API
-  (`/admin/agents…`: list / stage / charter / revoke), guarded by this bearer
-  token. Unset = no admin surface. It is not an agent token.
-- `HEDOFFICE_DEMO_AGENT` — set `0` to never seed the demo agent (recommended
-  in cloud; it is also skipped automatically whenever any env-seeded or
-  existing agent is present).
+  (`/admin/agents…`: list / stage / charter / revoke / suspend / resume, plus
+  `/admin/killswitch`), guarded by this bearer token. Unset = no admin surface.
+  It is not an agent token.
+- `HEDOFFICE_DEMO_AGENT` — set `1` to seed a demo agent into an empty registry
+  (opt-in, F8). Omitted/anything-else = never seeded (the default; recommended
+  in cloud so the demo token never reaches your logs).
+- `HEDOFFICE_ALLOWED_ORIGINS` — comma-separated Origin allowlist. When set,
+  DNS-rebinding protection is re-enabled and browser requests with an unlisted
+  Origin get 403 (F14). Non-browser MCP clients send no Origin and are
+  unaffected.
+- `HEDOFFICE_REQUIRE_TOKEN` — set `1` to re-check the bearer on every request,
+  not just at `initialize`, so a stolen session id alone is insufficient (F13).
+- `HEDOFFICE_SESSION_IDLE_MS` — idle-session expiry in ms; a session with no
+  request for this long is force-closed (default `1800000` = 30 min, F11).
 - `HEDOFFICE_APPROVAL_TIMEOUT_MS` — how long a web-UI approval prompt may sit
   unanswered before auto-denying (default `300000` = 5 min).
 

@@ -167,9 +167,21 @@ Threat-model pass, secret-storage audit, tool-permission gates, packaging
   unit-tested against a fake socket) + `selectTtsProvider` policy + sherpa-onnx
   `Local*Provider` skeletons. On-device wiring + real latency is a dev-machine task
   ([TESTING.md §4](TESTING.md)).
+- [x] **Threat model** (STRIDE, R5.1): six threat areas with cited
+  mitigations/gaps + a ranked 18-fix list ([SECURITY.md](SECURITY.md)).
+- [x] **Session hardening** (R5.2, Prompt 5B): idle-timeout expiry, origin-change
+  replay rejection with a `security.violation` event, and an optional
+  per-request bearer re-check (`HEDOFFICE_REQUIRE_TOKEN=1`) — plus the
+  fail-closed approval gate, per-field input caps, constant-time token
+  comparison, `chmod 0600` on the DB, and the hosted origin allowlist.
+- [x] **Kill switch** (R5.6, Prompt 5C): global `killAll`/`liftKill` and
+  per-cubicle `suspend`/`resume`, event-sourced so the CLI and a live server
+  agree, wired to admin endpoints + the CLI. New adversarial harness:
+  `pnpm --filter @hedoffice/harness security`.
 - [ ] On-device audio: implement the sherpa-onnx bodies + measure glass-to-glass
-- [ ] Threat-model pass + tool-permission policy UI
 - [ ] Packaging (`electron-builder`) + installers, docs, OSS release
+- [ ] Remaining hardening (tracked in [SECURITY.md](SECURITY.md)): rate limiting
+  (F4), SSE ticket (F10), helmet/CSP/CORS (F16), renderer IPC token (F18)
 
 **Exit-gate:** v1.0. *(Electron packaging + on-device audio require a real
 desktop/display, so they're built here and verified on a developer machine.)*

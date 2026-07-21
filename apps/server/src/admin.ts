@@ -3,6 +3,7 @@ import type { Request, Response, NextFunction } from "express";
 import type { Office } from "@hedoffice/core";
 import { isValidLibraryPath } from "@hedoffice/core";
 import { PermissionStage } from "@hedoffice/schema";
+import { safeEqual } from "./auth.js";
 
 /**
  * Operator-only HTTP surface for managing agents on a *running* server —
@@ -26,7 +27,7 @@ export function attachAdminApi(
   const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
     const h = req.headers.authorization;
     const token = typeof h === "string" && h.startsWith("Bearer ") ? h.slice(7) : undefined;
-    if (token !== adminToken) {
+    if (!safeEqual(token, adminToken)) {
       office.store.append({
         agentId: "admin",
         streamId: "security",
@@ -40,17 +41,62 @@ export function attachAdminApi(
     next();
   };
 
+  // --- kill switch & suspension (docs/SECURITY.md R5.6) ----------------------
+
+  /** Engage the global kill switch: drop every session, refuse new connections. */
+  app.post("/admin/killswitch", requireAdmin, (req, res) => {
+    const reason = typeof req.body?.reason === "string" ? req.body.reason : "admin killswitch";
+    const sessionsClosed = office.control.killAll(reason);
+    res.json({ ok: true, active: true, sessionsClosed });
+  });
+
+  /** Lift the kill switch and allow connections again. */
+  app.post("/admin/killswitch/restore", requireAdmin, (req, res) => {
+    const reason = typeof req.body?.reason === "string" ? req.body.reason : "admin restore";
+    office.control.liftKill(reason);
+    res.json({ ok: true, active: false });
+  });
+
+  /** Freeze one cubicle: its agent's tool calls are refused until resumed. */
+  app.post("/admin/agents/:id/suspend", requireAdmin, (req, res) => {
+    const id = req.params.id ?? "";
+    if (!office.agents.has(id)) {
+      res.status(404).json({ error: "unknown agent" });
+      return;
+    }
+    const reason = typeof req.body?.reason === "string" ? req.body.reason : "admin suspend";
+    office.control.suspend(id, reason);
+    office.control.forceDisconnect(id);
+    res.json({ ok: true, agentId: id, suspended: true });
+  });
+
+  /** Unfreeze a previously-suspended cubicle. */
+  app.post("/admin/agents/:id/resume", requireAdmin, (req, res) => {
+    const id = req.params.id ?? "";
+    if (!office.agents.has(id)) {
+      res.status(404).json({ error: "unknown agent" });
+      return;
+    }
+    const reason = typeof req.body?.reason === "string" ? req.body.reason : "admin resume";
+    office.control.resume(id, reason);
+    res.json({ ok: true, agentId: id, suspended: false });
+  });
+
   app.get("/admin/agents", requireAdmin, (_req, res) => {
     res.json({ agents: office.agents.list() });
   });
 
   app.post("/admin/agents/:id/revoke", requireAdmin, (req, res) => {
-    const done = office.agents.revoke((req.params.id ?? ""));
+    const id = req.params.id ?? "";
+    const done = office.agents.revoke(id);
     if (!done) {
       res.status(404).json({ error: "unknown or already-revoked agent" });
       return;
     }
-    res.json({ ok: true });
+    // Kill the live session too — revocation must take effect immediately, not
+    // only on the agent's next reconnect (docs/SECURITY.md F5).
+    const sessionsClosed = office.control.forceDisconnect(id);
+    res.json({ ok: true, sessionsClosed });
   });
 
   app.post("/admin/agents/:id/stage", requireAdmin, (req, res) => {

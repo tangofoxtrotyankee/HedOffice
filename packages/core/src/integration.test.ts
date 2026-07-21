@@ -86,6 +86,18 @@ describe("ApprovalGate", () => {
     expect(office.approvals.policyFor(a, "task.create")).toBe("prompt");
     office.close();
   });
+
+  it("fails closed: prompt policy with no approver denies and logs a violation (F1)", async () => {
+    const office = new Office({ approval: { defaultPolicy: "prompt" } }); // no approver
+    const a = office.registerAgent("Ada").agentId;
+    const decision = await office.approvals.request(a, "notebook.write", "notebook.write");
+    expect(decision).toBe("deny");
+    const violation = office.store
+      .read({ type: "security.violation", agentId: a })
+      .filter((e) => e.type === "security.violation" && e.payload.kind === "approval_no_approver");
+    expect(violation).toHaveLength(1);
+    office.close();
+  });
 });
 
 describe("PresenceEngine 5-state precedence", () => {

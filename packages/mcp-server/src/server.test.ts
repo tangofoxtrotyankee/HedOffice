@@ -49,9 +49,11 @@ describe("HedOfficeServer (many clients, one server)", () => {
   });
 
   it("accepts 3 concurrent agents, each in an isolated session", async () => {
-    const a = server.office.registerAgent("Ada");
-    const b = server.office.registerAgent("Babbage");
-    const c = server.office.registerAgent("Curie");
+    // autonomous: this proves state isolation/routing, not the approval gate —
+    // so mutating tools should run without a human approver wired.
+    const a = server.office.registerAgent("Ada", "autonomous");
+    const b = server.office.registerAgent("Babbage", "autonomous");
+    const c = server.office.registerAgent("Curie", "autonomous");
 
     const [a1, b1, c1] = await Promise.all([
       connect(a.token),
@@ -77,8 +79,8 @@ describe("HedOfficeServer (many clients, one server)", () => {
   });
 
   it("isolates tasks across cubicles", async () => {
-    const a = server.office.registerAgent("Ada");
-    const b = server.office.registerAgent("Babbage");
+    const a = server.office.registerAgent("Ada", "autonomous");
+    const b = server.office.registerAgent("Babbage", "autonomous");
     const { client: ca } = await connect(a.token);
     const { client: cb } = await connect(b.token);
 

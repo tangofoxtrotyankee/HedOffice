@@ -12,6 +12,8 @@ export type { LibraryDocMeta } from "./library.js";
 export type { Utterance, ListenResult } from "./channel.js";
 export { ApprovalGate, MUTATING_TOOLS, STAGE_POLICY } from "./approvals.js";
 export type { Approver, ApprovalRequest, ApprovalGateOptions } from "./approvals.js";
+export { OfficeControl, appendSecurityViolation } from "./control.js";
+export type { ForceDisconnect } from "./control.js";
 export { createApprovalBridge } from "./approval-bridge.js";
 export type { ApprovalBridge } from "./approval-bridge.js";
 export { buildFloorView, buildCubicleDetail } from "./views.js";

@@ -1,6 +1,22 @@
+import { chmodSync } from "node:fs";
 import Database from "better-sqlite3";
 import { NewEvent, StoredEvent } from "@hedoffice/schema";
 import { DDL } from "./ddl.js";
+
+/**
+ * Best-effort `chmod 0600` on the SQLite file and its WAL/SHM sidecars. The
+ * sidecars may not exist yet (created lazily), and some filesystems reject
+ * chmod (e.g. certain mounts) — neither is fatal, so failures are swallowed.
+ */
+function restrictFilePermissions(location: string): void {
+  for (const path of [location, `${location}-wal`, `${location}-shm`]) {
+    try {
+      chmodSync(path, 0o600);
+    } catch {
+      // sidecar absent or filesystem doesn't support chmod — ignore.
+    }
+  }
+}
 
 /** Filters for replaying a slice of the log, in total order. */
 export interface ReadOptions {
@@ -58,6 +74,11 @@ export class EventStore {
     this.db.pragma("foreign_keys = ON");
     this.db.exec(DDL);
     this.migrate();
+    // Restrict the on-disk log (and its WAL/SHM sidecars) to the owning user
+    // (docs/SECURITY.md T5.1 / F15). The DB holds notebooks, transcripts and
+    // charters in cleartext; a same-user process is the trust boundary, but a
+    // stray group/other-readable file should not widen it.
+    if (location !== ":memory:") restrictFilePermissions(location);
   }
 
   /**

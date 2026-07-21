@@ -113,11 +113,12 @@ doubles as a **tamper-evident audit trail**.
 
 # Threat model (Phase 5 — STRIDE)
 
-> **Status: analysis for MD review (Prompt 5A output). No fixes implemented
-> yet.** Every claim below cites the code as of this commit. Fix IDs (F1…F18)
-> are collected in the ranked fix list at the end; effort is **S** (≤½ day),
-> **M** (1–2 days), **L** (3+ days). This section satisfies R5.1 of
-> [ROADMAP_PHASES_5-10.md](ROADMAP_PHASES_5-10.md).
+> **Status: threat model complete (Prompt 5A); session hardening + kill switch
+> implemented (Prompts 5B/5C).** The analysis below cites the code as it stood
+> when the model was written; the **Fix status** table at the end records what
+> has since landed. Fix IDs (F1…F18) are collected in the ranked fix list;
+> effort is **S** (≤½ day), **M** (1–2 days), **L** (3+ days). This section
+> satisfies R5.1 of [ROADMAP_PHASES_5-10.md](ROADMAP_PHASES_5-10.md).
 
 **Assets:** the user's machine; notebook/task/transcript/charter/library data;
 per-agent bearer tokens + the admin token; provider API keys; the integrity of
@@ -339,7 +340,44 @@ this one).
 - Unsalted SHA-256 token hashing — accepted for 256-bit random tokens (T3.4).
 
 > The `security.violation` event type (used by F12 and required by
-> R5.2/Phase 6+) does not exist yet — today's nearest equivalent is
-> `audit.security_event` (`packages/schema/src/events.ts:117-121`). Prompt 5B
-> adds `security.violation` as a new typed event; existing
-> `audit.security_event` emissions stay as-is.
+> R5.2/Phase 6+) is now a first-class typed event
+> (`packages/schema/src/events.ts`), alongside `system.killswitch`,
+> `cubicle.suspend`, and `cubicle.resume` for R5.6. Existing
+> `audit.security_event` emissions stay as-is (they remain the channel for
+> *informational* events like `session_idle_expired`).
+
+## Fix status (Prompts 5B / 5C)
+
+Implemented in this phase, with tests:
+
+| ID | Fix | Where | Proof |
+|---|---|---|---|
+| F1 | Approval gate **fails closed** (no approver ⇒ deny + `security.violation`) | `packages/core/src/approvals.ts`, `control.ts` | `core` integration test |
+| F2 | Desktop honours per-agent stage (dropped the fixed `defaultPolicy`) | `apps/desktop/electron/main.ts` | typecheck |
+| F3 | Per-field length caps on tool inputs | `packages/schema/src/tools.ts` | schema |
+| F5 | Revocation stops a live session (per-call guard + force-disconnect) | `packages/mcp-server/src/tools.ts`, `apps/server/src/admin.ts` | `hardening.test.ts` |
+| F7 | Boot refuses on a plaintext secrets file | `apps/server/src/preflight.ts` | `preflight.test.ts` |
+| F8 | Demo agent is opt-**in** (`HEDOFFICE_DEMO_AGENT=1`) | `apps/server/src/index.ts` | — |
+| F9 | Constant-time token comparison | `apps/server/src/auth.ts` (admin + ui) | — |
+| F11 | Idle session expiry (default 30 min, configurable) | `packages/mcp-server/src/server.ts` | `hardening.test.ts` |
+| F12 | Origin-change replay ⇒ 403 + `security.violation` | `packages/mcp-server/src/server.ts` | `hardening.test.ts` + harness |
+| F13 | Per-request bearer re-check (`HEDOFFICE_REQUIRE_TOKEN=1`) | `packages/mcp-server/src/server.ts` | `hardening.test.ts` + harness |
+| F14 | Hosted `allowedOrigins` from env re-enables rebinding protection | `apps/server/src/boot.ts` | — |
+| F15 | `chmod 0600` the SQLite DB + WAL/SHM at open | `packages/event-store/src/store.ts` | — |
+| F17 | Renderer `sandbox: true` pinned | `apps/desktop/electron/main.ts` | typecheck |
+| — | **Kill switch** (global `killAll`/`liftKill`, per-cubicle `suspend`/`resume`) | `packages/core/src/control.ts`, admin API, CLI | `hardening.test.ts` |
+
+Runnable adversarial proof: `pnpm --filter @hedoffice/harness security`.
+
+**Still open (tracked, not yet done):**
+
+- **F4** rate limiting (per-session tool calls, per-IP auth attempts) — M.
+- **F10** short-lived SSE ticket to replace the `?token=` query param — M.
+- **F16** `helmet` + explicit deny-by-default CORS + CSP on the hosted UI — S
+  (deferred to avoid breaking the served renderer without a tested CSP).
+- **F17 (CSP half)** a renderer Content-Security-Policy — the `sandbox` pin
+  landed; the production CSP header is deferred with F16.
+- **F18** IPC hardening: stop returning the plaintext agent token to the
+  renderer, gesture-gate `resolveApproval` — M (UI-coupled).
+- **Accepted risks** (unchanged): at-rest DB encryption, full OAuth 2.1,
+  residual prompt injection, unsalted hashing of 256-bit random tokens.

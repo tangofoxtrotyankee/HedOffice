@@ -12,6 +12,10 @@ interface Session {
   transport: StreamableHTTPServerTransport;
   server: McpServer;
   agentId: string;
+  /** The HTTP Origin seen at initialize (null for non-browser clients). */
+  origin: string | null;
+  /** Epoch ms of the last request on this session (for idle expiry). */
+  lastSeen: number;
 }
 
 export interface HedOfficeServerOptions {
@@ -30,6 +34,18 @@ export interface HedOfficeServerOptions {
    * would otherwise be rejected and protection relies on bearer tokens instead.
    */
   enableDnsRebindingProtection?: boolean;
+  /**
+   * Idle session expiry (R5.2 / F11). A session with no request for this long is
+   * force-closed and flips to `offline`. Default 30 min. Set small in tests.
+   */
+  idleTimeoutMs?: number;
+  /**
+   * Per-request bearer re-check (R5.2 / F13). When true, every request on an
+   * existing session must still carry a bearer that resolves to the session's
+   * bound agent — a stolen session id alone is no longer sufficient. Enabled on
+   * the hosted deploy via HEDOFFICE_REQUIRE_TOKEN=1.
+   */
+  requireToken?: boolean;
 }
 
 function jsonRpcError(code: number, message: string) {
@@ -50,9 +66,17 @@ export class HedOfficeServer {
   private httpServer?: HttpServer;
   private boundHost?: string;
   private uiRoot?: string;
+  private readonly idleTimeoutMs: number;
+  private readonly requireToken: boolean;
+  private sweeper?: ReturnType<typeof setInterval>;
 
   constructor(private readonly opts: HedOfficeServerOptions = {}) {
     this.office = opts.office ?? new Office();
+    this.idleTimeoutMs = opts.idleTimeoutMs ?? 30 * 60_000;
+    this.requireToken = opts.requireToken ?? false;
+    // The kill switch / revoke path drops live sockets through this hook
+    // (the core owns policy in the event log; the server owns the sessions).
+    this.office.control.setForceDisconnect((target) => this.closeSessions(target));
     this.app = express();
     // 2mb: room for large charters/notebook payloads; still a sane abuse cap.
     this.app.use(express.json({ limit: "2mb" }));
@@ -91,15 +115,66 @@ export class HedOfficeServer {
     return typeof h === "string" && h.startsWith("Bearer ") ? h.slice(7) : undefined;
   }
 
+  private originOf(req: Request): string | null {
+    const o = req.headers.origin;
+    return typeof o === "string" ? o : null;
+  }
+
+  /**
+   * Per-request checks on an already-established session (R5.2). Returns false
+   * (and has already written the response) when the request must be refused:
+   * the office is killed, the session id is being replayed from a different
+   * origin than it was bound to, or per-request token re-check is on and fails.
+   * A blocked replay/re-check is logged as a `security.violation`.
+   */
+  private guardSession(session: Session, req: Request, res: Response): boolean {
+    if (this.office.control.isKilled()) {
+      res.status(503).json(jsonRpcError(-32002, "Service unavailable: kill switch engaged"));
+      return false;
+    }
+    const reqOrigin = this.originOf(req);
+    if (session.origin !== null && reqOrigin !== null && reqOrigin !== session.origin) {
+      this.office.control.violation(
+        session.agentId,
+        "session_replay_origin",
+        `session used from origin ${reqOrigin}, bound to ${session.origin}`,
+        reqOrigin,
+      );
+      res.status(403).json(jsonRpcError(-32003, "Forbidden: session origin mismatch"));
+      return false;
+    }
+    if (this.requireToken) {
+      const token = this.bearer(req);
+      const who = token ? this.office.agents.resolveToken(token) : undefined;
+      if (who !== session.agentId) {
+        this.office.control.violation(
+          session.agentId,
+          "token_recheck_failed",
+          "per-request bearer re-check did not resolve to the bound agent",
+          reqOrigin,
+        );
+        res.status(401).json(jsonRpcError(-32001, "Unauthorized: token re-check failed"));
+        return false;
+      }
+    }
+    session.lastSeen = Date.now();
+    return true;
+  }
+
   private async handlePost(req: Request, res: Response): Promise<void> {
     const sid = req.headers["mcp-session-id"];
     const existing = typeof sid === "string" ? this.sessions.get(sid) : undefined;
     if (existing) {
+      if (!this.guardSession(existing, req, res)) return;
       await existing.transport.handleRequest(req, res, req.body);
       return;
     }
 
     if (sid === undefined && isInitializeRequest(req.body)) {
+      if (this.office.control.isKilled()) {
+        res.status(503).json(jsonRpcError(-32002, "Service unavailable: kill switch engaged"));
+        return;
+      }
       await this.initializeSession(req, res);
       return;
     }
@@ -131,7 +206,13 @@ export class HedOfficeServer {
       allowedHosts: this.allowedHosts(),
       allowedOrigins: this.opts.allowedOrigins,
       onsessioninitialized: (newSid) => {
-        this.sessions.set(newSid, { transport, server, agentId });
+        this.sessions.set(newSid, {
+          transport,
+          server,
+          agentId,
+          origin: this.originOf(req),
+          lastSeen: Date.now(),
+        });
         this.office.presence.connect(agentId);
       },
     });
@@ -154,7 +235,42 @@ export class HedOfficeServer {
       res.status(400).send("Invalid or missing session id");
       return;
     }
+    if (!this.guardSession(session, req, res)) return;
     await session.transport.handleRequest(req, res);
+  }
+
+  /**
+   * Force-close sessions for one agent (revoke) or all of them ("*", kill
+   * switch). Collect targets first, then close — `transport.close()` fires
+   * `onclose`, which mutates the sessions map. Returns the count closed.
+   */
+  private closeSessions(target: string | "*"): number {
+    const targets = [...this.sessions.values()].filter(
+      (s) => target === "*" || s.agentId === target,
+    );
+    for (const s of targets) void s.transport.close();
+    return targets.length;
+  }
+
+  /** Close sessions idle longer than the configured timeout (R5.2 / F11). */
+  private sweepIdle(): void {
+    const now = Date.now();
+    for (const s of [...this.sessions.values()]) {
+      if (now - s.lastSeen > this.idleTimeoutMs) {
+        this.office.store.append({
+          agentId: s.agentId,
+          streamId: "security",
+          actor: "system",
+          type: "audit.security_event",
+          payload: {
+            agentId: s.agentId,
+            kind: "session_idle_expired",
+            detail: `no activity for > ${this.idleTimeoutMs}ms`,
+          },
+        });
+        void s.transport.close();
+      }
+    }
   }
 
   private allowedHosts(): string[] | undefined {
@@ -171,12 +287,22 @@ export class HedOfficeServer {
       this.httpServer = this.app.listen(port, host, () => {
         const addr = this.httpServer!.address() as AddressInfo;
         this.boundHost = `127.0.0.1:${addr.port}`;
+        // Sweep for idle sessions. Interval is the min of the timeout and 60 s,
+        // so a short test timeout still expires promptly. unref() so the timer
+        // never keeps the process alive on its own.
+        const period = Math.min(this.idleTimeoutMs, 60_000);
+        this.sweeper = setInterval(() => this.sweepIdle(), period);
+        this.sweeper.unref?.();
         resolve(addr.port);
       });
     });
   }
 
   async close(): Promise<void> {
+    if (this.sweeper) {
+      clearInterval(this.sweeper);
+      this.sweeper = undefined;
+    }
     for (const session of this.sessions.values()) {
       await session.transport.close();
     }
