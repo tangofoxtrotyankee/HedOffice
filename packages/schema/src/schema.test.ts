@@ -62,11 +62,13 @@ describe("event schema", () => {
 });
 
 describe("tool inputs", () => {
-  it("covers all twelve v1 tools", () => {
-    expect(TOOL_NAMES).toHaveLength(12);
+  it("covers the v1 tool set plus the Phase 6 proposal tools", () => {
+    expect(TOOL_NAMES).toHaveLength(14);
     expect(TOOL_NAMES).toContain("cubicle.brief");
     expect(TOOL_NAMES).toContain("library.list");
     expect(TOOL_NAMES).toContain("library.read");
+    expect(TOOL_NAMES).toContain("library.propose");
+    expect(TOOL_NAMES).toContain("library.my_proposals");
   });
 
   it("requires a non-empty task title", () => {

@@ -194,8 +194,11 @@ Defined in full in **[ROADMAP_PHASES_5-10.md](ROADMAP_PHASES_5-10.md)**
 (requirements, testing, exit gates, build prompts). In brief:
 
 - **Phase 6 — Company Library:** the governance library formalised — fixed
-  layout, `charters/self`, hash manifest, `library.updated` / `library.proposal`
-  event flow.
+  layout, `charters/self`, hash manifest, `library.written` (prev→new hash) /
+  `library.proposal` event flow. **Code done** (`library://…` MCP resources,
+  the `library.propose` → approve/reject flow via admin API + CLI, proofs in
+  `packages/mcp-server/src/library-resources.test.ts`). *Remaining (MD, Prompt
+  6C): author the real `constitution.md` / `ethics.md` and seed the layout.*
 - **Phase 7 — Staged Permissions Enforcement:** the five-stage ladder
   (Observe → Draft → Recommend → Queue → Execute) enforced server-side per tool
   call; migrates the current `observe`/`supervised`/`autonomous` stages.

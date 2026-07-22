@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { setTimeout as sleep } from "node:timers/promises";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Office } from "@hedoffice/core";
-import { cubicleOf, MUTATING_TOOLS, STAGE_POLICY, sha256 } from "@hedoffice/core";
+import { cubicleOf, isValidLibraryPath, libraryUri, MUTATING_TOOLS, STAGE_POLICY, sha256 } from "@hedoffice/core";
 import {
   ChannelListenInput,
   ChannelSayInput,
+  LibraryProposeInput,
   LibraryReadInput,
   NotebookAppendInput,
   NotebookWriteInput,
@@ -283,4 +284,109 @@ export function registerCubicleTools(
         : ok({ path: args.path, content });
     }),
   );
+
+  server.registerTool(
+    "library.propose",
+    {
+      description:
+        "Propose an edit to a governance-library doc (Phase 6). This is the ONLY " +
+        "way an agent can change the library, and it changes nothing until the MD " +
+        "approves it — it queues a proposal for review. Give the target path, the " +
+        "full proposed content, and a short rationale.",
+      inputSchema: LibraryProposeInput.shape,
+    },
+    (args) => tracked(office, agentId, "library.propose", args, () => {
+      if (!isValidLibraryPath(args.path)) {
+        return ok({ ok: false, error: "invalid_path", path: args.path });
+      }
+      const proposalId = office.library.propose(
+        agentId,
+        args.path,
+        args.proposed_content,
+        args.rationale,
+      );
+      return ok({ ok: true, proposalId, status: "pending" });
+    }),
+  );
+
+  server.registerTool(
+    "library.my_proposals",
+    {
+      description:
+        "List your own library proposals and their status. Rejected proposals " +
+        "carry the MD's reason so you can revise and re-propose.",
+      inputSchema: {},
+    },
+    () => tracked(office, agentId, "library.my_proposals", {}, () =>
+      ok({
+        proposals: office.library.listProposals({ agentId }).map((p) => ({
+          proposalId: p.proposalId,
+          path: p.path,
+          status: p.status,
+          reason: p.reason,
+          rationale: p.rationale,
+          createdAt: p.createdAt,
+        })),
+      }),
+    ),
+  );
+
+  registerLibraryResources(server, agentId, office);
+}
+
+/**
+ * Exposes the governance library as read-only MCP resources (Phase 6 R6.2):
+ * `library://manifest` (paths + hashes), `library://charters/self` (this
+ * cubicle's own charter, resolved server-side), and `library://<path>` for
+ * every doc. Because the read callbacks close over `agentId`, `charters/self`
+ * always resolves to the *connecting* cubicle — the one agent-specific mapping.
+ * There is deliberately no write resource: the only agent-facing mutation is the
+ * `library.propose` tool (R6.4).
+ */
+function registerLibraryResources(server: McpServer, agentId: string, office: Office): void {
+  const template = new ResourceTemplate("library://{+path}", {
+    list: () => {
+      const resources = [
+        { uri: libraryUri("manifest"), name: "library manifest", mimeType: "application/json" },
+        { uri: libraryUri("charters/self"), name: "your charter", mimeType: "text/markdown" },
+        ...office.library.list().map((d) => ({
+          uri: libraryUri(d.path),
+          name: d.path,
+          mimeType: "text/markdown",
+        })),
+      ];
+      return { resources };
+    },
+  });
+
+  server.registerResource(
+    "library",
+    template,
+    { description: "The shared governance library (read-only)." },
+    (uri, variables) => {
+      const raw = variables.path;
+      const path = Array.isArray(raw) ? raw.join("/") : String(raw ?? "");
+      const { text, mimeType } = resolveLibraryResource(office, agentId, path);
+      return { contents: [{ uri: uri.href, mimeType, text }] };
+    },
+  );
+}
+
+function resolveLibraryResource(
+  office: Office,
+  agentId: string,
+  path: string,
+): { text: string; mimeType: string } {
+  if (path === "manifest") {
+    const manifest = office.library.manifest(office.cubicles.charterRead(agentId));
+    return { text: JSON.stringify(manifest, null, 2), mimeType: "application/json" };
+  }
+  if (path === "charters/self") {
+    return { text: office.cubicles.charterRead(agentId), mimeType: "text/markdown" };
+  }
+  const content = office.library.resolve(path);
+  if (content === undefined) {
+    throw new Error(`library resource not found: ${path}`);
+  }
+  return { text: content, mimeType: "text/markdown" };
 }

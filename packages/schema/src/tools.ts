@@ -58,6 +58,13 @@ export const LibraryReadInput = z.object({
   /** Doc path, e.g. "constitution.md" or "decision_trees/user_registered.md". */
   path: z.string().min(1),
 });
+/** Propose a library edit (Phase 6 R6.4) — the only agent-facing mutation. */
+export const LibraryProposeInput = z.object({
+  path: z.string().min(1).max(MAX_TITLE_CHARS),
+  proposed_content: z.string().max(MAX_NOTEBOOK_CHARS),
+  rationale: z.string().min(1).max(MAX_TEXT_CHARS),
+});
+export const LibraryMyProposalsInput = z.object({});
 
 /** Registry of tool name -> input schema, for wiring MCP tool defs in Phase 1. */
 export const TOOL_INPUTS = {
@@ -73,6 +80,8 @@ export const TOOL_INPUTS = {
   "cubicle.brief": CubicleBriefInput,
   "library.list": LibraryListInput,
   "library.read": LibraryReadInput,
+  "library.propose": LibraryProposeInput,
+  "library.my_proposals": LibraryMyProposalsInput,
 } as const;
 
 export type ToolName = keyof typeof TOOL_INPUTS;

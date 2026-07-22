@@ -57,6 +57,7 @@ if (!command || command === "help" || command === "--help") {
   suspend <agentId> [reason]    freeze one cubicle's tool calls
   resume  <agentId> [reason]    unfreeze a cubicle
   library list | get <docPath> | set <docPath> <file|-> | rm <docPath> | sync <vaultDir>
+          | proposals [pending|approved|rejected] | approve <id> | reject <id> [reason]
 DB: --db <path> or HEDOFFICE_DB env (must be the server's SQLite file).
 Note: kill/suspend from the CLI write to the shared log; a running server picks
 them up on the next connection/tool call. Use the /admin endpoints to also drop
@@ -224,8 +225,34 @@ try {
           }
           break;
         }
+        case "proposals": {
+          const proposals = office.library.listProposals(
+            a === "pending" || a === "approved" || a === "rejected" ? { status: a } : {},
+          );
+          if (proposals.length === 0) console.log("no proposals");
+          for (const p of proposals) {
+            console.log(
+              `${p.proposalId}  ${p.status.padEnd(8)}  ${p.path}  by ${p.agentId.slice(0, 8)}` +
+                `${p.reason ? `  (reason: ${p.reason})` : ""}`,
+            );
+          }
+          break;
+        }
+        case "approve": {
+          if (!a) fail("library approve requires a proposalId");
+          if (!office.library.approveProposal(a)) fail(`unknown or already-resolved proposal: ${a}`);
+          console.log(`approved ${a} — content applied to the library`);
+          break;
+        }
+        case "reject": {
+          if (!a) fail("library reject requires a proposalId");
+          const reason = rest.slice(2).join(" ") || "rejected";
+          if (!office.library.rejectProposal(a, reason)) fail(`unknown or already-resolved proposal: ${a}`);
+          console.log(`rejected ${a} (${reason}) — nothing applied`);
+          break;
+        }
         default:
-          fail(`unknown library command "${sub}" (list|get|set|rm|sync)`);
+          fail(`unknown library command "${sub}" (list|get|set|rm|sync|proposals|approve|reject)`);
       }
       break;
     }

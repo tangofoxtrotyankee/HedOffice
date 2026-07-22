@@ -23,8 +23,11 @@
 > 3. **The Company Library (Phase 6) formalises the existing governance
 >    library** (`packages/core/src/library.ts`, seed docs in
 >    `docs/templates/library/`): it adds the fixed layout, `charters/self`
->    resolution, the hash manifest, and the `library.updated` /
->    `library.proposal` event flow.
+>    resolution, the hash manifest, and the proposal flow. *Implementation note:*
+>    the roadmap's "`library.updated`" role is served by the existing
+>    `library.written` event, enriched with `prevHash` + `proposedBy` (rather
+>    than adding a new type); the new events are `library.proposal` and
+>    `library.proposal_rejected`.
 
 ---
 

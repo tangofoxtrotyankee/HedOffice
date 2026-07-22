@@ -43,13 +43,40 @@ export const CharterWritten = z.object({
 
 /**
  * The operator wrote/replaced/deleted a doc in the shared governance library
- * (constitution.md, ethics.md, decision_trees/*, …). `newHash` null = deleted.
- * Library docs are office-wide, not per-cubicle: `agentId` is "office".
+ * (constitution.md, ethics.md, decision_trees/*, …). This is the canonical
+ * "library changed" event (Phase 6 R6.3): `prevHash`→`newHash` gives the
+ * before/after, the event `ts` is the mtime, and `proposedBy` credits the agent
+ * whose approved proposal produced the edit (null for a direct operator write).
+ * `newHash` null = deleted. Library docs are office-wide: `agentId` is "office".
  */
 export const LibraryWritten = z.object({
   path: z.string(),
+  prevHash: z.string().nullable(),
   newHash: z.string().nullable(),
   byteLen: z.number().int().nonnegative(),
+  proposedBy: Id.nullable(),
+});
+
+/**
+ * An agent proposed a library edit (Phase 6 R6.4). Agents cannot write the
+ * library directly — this is the only agent-facing mutation, and it changes
+ * nothing until the MD approves it (which then emits `library.written` with
+ * `proposedBy` set). `newHash` is the hash of the proposed content.
+ */
+export const LibraryProposal = z.object({
+  proposalId: Id,
+  agentId: Id,
+  path: z.string(),
+  newHash: z.string(),
+  rationale: z.string(),
+});
+
+/** The MD rejected an agent's library proposal; the reason is readable by the agent. */
+export const LibraryProposalRejected = z.object({
+  proposalId: Id,
+  agentId: Id,
+  path: z.string(),
+  reason: z.string(),
 });
 
 export const NotebookWritten = z.object({
@@ -162,6 +189,11 @@ export const EventBody = z.discriminatedUnion("type", [
   z.object({ type: z.literal("agent.stage_changed"), payload: AgentStageChanged }),
   z.object({ type: z.literal("charter.written"), payload: CharterWritten }),
   z.object({ type: z.literal("library.written"), payload: LibraryWritten }),
+  z.object({ type: z.literal("library.proposal"), payload: LibraryProposal }),
+  z.object({
+    type: z.literal("library.proposal_rejected"),
+    payload: LibraryProposalRejected,
+  }),
   z.object({ type: z.literal("presence.changed"), payload: PresenceChanged }),
   z.object({ type: z.literal("notebook.written"), payload: NotebookWritten }),
   z.object({ type: z.literal("task.created"), payload: TaskCreated }),

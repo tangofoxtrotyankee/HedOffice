@@ -7,8 +7,13 @@ export type { Task } from "./cubicle.js";
 export { PresenceEngine } from "./presence.js";
 export type { PresenceSnapshot } from "./presence.js";
 export { ChannelService } from "./channel.js";
-export { LibraryStore, isValidLibraryPath } from "./library.js";
-export type { LibraryDocMeta } from "./library.js";
+export { LibraryStore, isValidLibraryPath, libraryUri } from "./library.js";
+export type {
+  LibraryDocMeta,
+  LibraryManifest,
+  ManifestEntry,
+  LibraryProposalRecord,
+} from "./library.js";
 export type { Utterance, ListenResult } from "./channel.js";
 export { ApprovalGate, MUTATING_TOOLS, STAGE_POLICY } from "./approvals.js";
 export type { Approver, ApprovalRequest, ApprovalGateOptions } from "./approvals.js";

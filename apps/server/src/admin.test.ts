@@ -127,6 +127,33 @@ describe("admin API (operator agent management — secret-free)", () => {
     expect(booted!.office.library.list()).toHaveLength(0);
   });
 
+  it("lists and resolves library proposals over HTTP (approve + reject)", async () => {
+    await boot();
+    const lee = booted!.office.registerAgent("Lee.").agentId;
+    const approveId = booted!.office.library.propose(lee, "goals.md", "Q3 goals", "draft");
+    const rejectId = booted!.office.library.propose(lee, "ethics.md", "loosen", "why not");
+
+    // The list route must not be swallowed by the /admin/library/* wildcard.
+    const pending = await admin("/admin/library/proposals?status=pending").then((r) => r.json());
+    expect(pending.proposals).toHaveLength(2);
+
+    const approved = await admin(`/admin/library/proposals/${approveId}/approve`, { method: "POST" });
+    expect(approved.status).toBe(200);
+    expect(booted!.office.library.read("goals.md")).toBe("Q3 goals");
+
+    const rejected = await admin(`/admin/library/proposals/${rejectId}/reject`, {
+      method: "POST",
+      body: JSON.stringify({ reason: "we do not loosen ethics" }),
+    });
+    expect(rejected.status).toBe(200);
+    expect(booted!.office.library.read("ethics.md")).toBeUndefined();
+    expect(booted!.office.library.getProposal(rejectId)?.reason).toBe("we do not loosen ethics");
+
+    // Re-resolving a settled proposal is a 404.
+    const again = await admin(`/admin/library/proposals/${approveId}/approve`, { method: "POST" });
+    expect(again.status).toBe(404);
+  });
+
   it("does not expose /admin routes when no admin token is configured", async () => {
     booted = bootHedOffice({ env: {} }); // no adminToken
     port = await booted.server.listen(0);

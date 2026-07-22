@@ -172,6 +172,26 @@ sentence chunk — rather than waiting for the full response.
   library**: operator-authored, path-addressed markdown (constitution, ethics,
   authority limits, decision trees, process docs; `library.written` events).
   Read-only for agents — there is no library-write tool.
+- `library.propose({ path, proposed_content, rationale })` /
+  `library.my_proposals()` → the **only** agent-facing library mutation (Phase
+  6). A proposal changes nothing until the MD approves it (emitting
+  `library.written` with the proposer credited) or rejects it (emitting
+  `library.proposal_rejected` with a reason the agent can read back).
+
+### Company Library as MCP resources (Phase 6)
+
+Alongside the read tools, each cubicle session exposes the library as read-only
+**MCP resources** so an agent can enumerate and read governance by URI:
+
+- `library://manifest` — every doc's path, read URI and SHA-256 hash, plus the
+  cubicle's own `charters/self` hash. Handed to the agent on connect (R6.5) so
+  it can tell what exists and whether anything changed since last session.
+- `library://charters/self` — resolves **server-side** to the *connecting*
+  cubicle's charter. This is the one agent-specific mapping; every other
+  resource is byte-identical for all agents, so isolation is preserved.
+- `library://<path>` — any doc, e.g. `library://constitution`,
+  `library://processes/welcome`, `library://decisions/routing` (the friendly
+  form without `.md` resolves too).
 
 ## Operator surfaces (not agent-facing)
 

@@ -73,6 +73,23 @@ CREATE TABLE IF NOT EXISTS library_docs (
   updated_at INTEGER NOT NULL
 );
 
+-- Agent-proposed library edits (Phase 6 R6.4): pending until the MD approves
+-- (applies the content) or rejects (records a reason). Nothing auto-applies.
+CREATE TABLE IF NOT EXISTS library_proposals (
+  proposal_id TEXT PRIMARY KEY,
+  agent_id    TEXT NOT NULL,
+  path        TEXT NOT NULL,
+  content     TEXT NOT NULL,
+  rationale   TEXT NOT NULL,
+  status      TEXT NOT NULL DEFAULT 'pending'
+              CHECK (status IN ('pending','approved','rejected')),
+  reason      TEXT,
+  created_at  INTEGER NOT NULL,
+  resolved_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_lib_prop_status ON library_proposals (status, created_at);
+CREATE INDEX IF NOT EXISTS idx_lib_prop_agent  ON library_proposals (agent_id, created_at);
+
 CREATE TABLE IF NOT EXISTS presence (
   agent_id      TEXT PRIMARY KEY,
   status        TEXT NOT NULL,

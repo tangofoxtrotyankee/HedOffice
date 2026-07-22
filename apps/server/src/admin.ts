@@ -141,6 +141,36 @@ export function attachAdminApi(
     res.json({ docs: office.library.list() });
   });
 
+  // --- library proposals (Phase 6 R6.4) --------------------------------------
+  // Registered before the /admin/library/* wildcard so "proposals" isn't read
+  // as a doc path.
+
+  app.get("/admin/library/proposals", requireAdmin, (req, res) => {
+    const status = req.query.status;
+    const filter =
+      status === "pending" || status === "approved" || status === "rejected"
+        ? ({ status } as const)
+        : {};
+    res.json({ proposals: office.library.listProposals(filter) });
+  });
+
+  app.post("/admin/library/proposals/:id/approve", requireAdmin, (req, res) => {
+    if (!office.library.approveProposal(req.params.id ?? "")) {
+      res.status(404).json({ error: "unknown or already-resolved proposal" });
+      return;
+    }
+    res.json({ ok: true, applied: true });
+  });
+
+  app.post("/admin/library/proposals/:id/reject", requireAdmin, (req, res) => {
+    const reason = typeof req.body?.reason === "string" ? req.body.reason : "rejected";
+    if (!office.library.rejectProposal(req.params.id ?? "", reason)) {
+      res.status(404).json({ error: "unknown or already-resolved proposal" });
+      return;
+    }
+    res.json({ ok: true, applied: false });
+  });
+
   app.get("/admin/library/*", requireAdmin, (req, res) => {
     const path = (req.params as Record<string, string>)[0] ?? "";
     const content = office.library.read(path);
